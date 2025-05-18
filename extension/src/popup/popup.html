@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <h1>CanvasToolkit</h1>
+        </div>
+        <a href="https://discord.gg/XSaS2kQUPF" target="_blank" class="discord-icon-container" title="Join our Discord!">
+            <img src="/public/images/discord.svg" alt="Discord Icon" class="discord-icon-svg" />
+        </a>
+        <div id="userInfoContainer" style="display:none;" class="container userInfoContainer">
+            <div class="userInfoDetails">
+                <div class="tooltip">
+                    <div id="creditsProgressBarContainer" class="creditsProgressBarContainer">
+                        <div id="creditsProgressBar" class="creditsProgressBar">
+                            <span id="creditsPercentageDisplay" class="creditsPercentageDisplay"></span> 
+                        </div>
+                    </div>
+                    <span class="tooltiptext">Monthly credit remaining. Resets at the end of each month.</span>
+                </div>
+            </div>
+            <div class="userInfoActions">
+                <div class="tooltip">
+                    <button id="manageButton" class="userInfoBtn">Manage</button>
+                    <span class="tooltiptext" id="manageUserTooltipText"></span>
+                </div>
+                <button id="logoutButton" class="userInfoBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div id="modelSelectionContainer">
+        <label for="primaryModel">Primary Model</label>
+        <select name="primaryModel" id="primaryModel">
+            <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+            <option value="deepseek/deepseek-chat">DeepSeek V3</option>
+            <option value="openai/gpt-4o">GPT-4o</option>
+            <option value="openai/o4-mini">o4 mini</option>
+            <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
+        </select>
+        <label for="secondaryModel">Secondary Model</label>
+        <select name="secondaryModel" id="secondaryModel">
+            <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+            <option value="deepseek/deepseek-chat">DeepSeek V3</option>
+            <option value="openai/gpt-4o">GPT-4o</option>
+            <option value="openai/o4-mini">o4 mini</option>
+            <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
+        </select>
+        <label for="stealthModeToggle">Stealth Mode</label>
+        <button id="stealthModeButton" class="stealthModeButton">Stealth Mode: Off</button>
+        </div>
+        <div id="loginOverlay" style="display:none;" class="loginOverlay">
+            <div class="login-form">
+                <p style="font-size: 0.9em; margin: 0 0 5px 0; text-align: center;">
+                    Login or Subscribe for AI features.<br>
+                    Fully invisible AI integration for $4.99/month.
+                </p>
+                <form id="loginForm">
+                    <input type="email" id="emailInput" placeholder="Email">
+                    <div class="password-login-row">
+                        <input type="password" id="passwordInput" placeholder="Password">
+                        <button type="submit" id="emailPassLoginButton" class="button-light" title="Login">➔</button>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" id="subscribeButton" class="button-light">Subscribe</button>
+                        <button type="button" id="learnMoreButton" class="button-secondary">Learn More</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container free-features">
+        <p><span class="check-icon">✓</span> Autofill Quiz Answers - Active</p>
+        <p><span class="check-icon">✓</span> Disable Tab Switch Detection - Active</p>
+        <p class="small-text">These features are automatically active on Canvas pages.</p>
+    </div>
+    <script src="/src/lib/supabase.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>
