@@ -33,19 +33,19 @@ const ComparisonChart = () => {
     const isRightInView = useInView(rightRef, { once: true, amount: 0.3 });
 
     const gptScores = [
-        { name: 'AIME', score: 14.0 },
-        { name: 'GPQA', score: 53.0 },
-        { name: 'CorpFin (v2)', score: 56.6 },
-        { name: 'MedQA', score: 88.2 },
-        { name: 'LegalBench', score: 79.8 }
+        { name: 'AIME', score: 14.0, description: 'Invite-only mathematics competition.' },
+        { name: 'GPQA', score: 53.0, description: 'Graduate-level general physics questions.' },
+        { name: 'CorpFin (v2)', score: 56.6, description: 'Corporate finance problems.' },
+        { name: 'MedQA', score: 88.2, description: 'Medical board exam questions.' },
+        { name: 'LegalBench', score: 79.8, description: 'Legal reasoning tasks.' }
     ];
 
     const bestScores = [
-        { name: 'AIME', score: 83.7, model: 'OpenAI o4 Mini' },
-        { name: 'GPQA', score: 74.5, model: 'OpenAI o4 Mini' },
-        { name: 'CorpFin (v2)', score: 68.4, model: 'Gemini 2.5 Pro' },
-        { name: 'MedQA', score: 96.0, model: 'OpenAI o4 Mini' },
-        { name: 'LegalBench', score: 83.6, model: 'Gemini 2.5 Pro' }
+        { name: 'AIME', score: 83.7, model: 'OpenAI o4 Mini', description: 'Invite-only mathematics competition.' },
+        { name: 'GPQA', score: 74.5, model: 'OpenAI o4 Mini', description: 'Graduate-level general physics questions.' },
+        { name: 'CorpFin (v2)', score: 68.4, model: 'Gemini 2.5 Pro', description: 'Corporate finance problems.' },
+        { name: 'MedQA', score: 96.0, model: 'OpenAI o4 Mini', description: 'Medical board exam questions.' },
+        { name: 'LegalBench', score: 83.6, model: 'Gemini 2.5 Pro', description: 'Legal reasoning tasks.' }
     ];
 
     const sorted = [...gptScores].sort((a, b) => a.score - b.score);
@@ -69,6 +69,7 @@ const ComparisonChart = () => {
                                 <div key={idx}>
                                     <div className="flex items-center mb-1 gap-1.5">
                                         <span className="text-xs font-medium">{item.name}</span>
+                                        <span className="text-xs text-gray-400"> - {item.description}</span>
                                     </div>
                                     <div className="flex items-center">
                                         <AnimatedProgressBar percentage={item.score} className="bg-gray-400" inView={isLeftInView} />
@@ -93,11 +94,12 @@ const ComparisonChart = () => {
                                 const best = findBest(item.name);
                                 return (
                                     <div key={idx}>
-                                        <div className="flex items-center mb-1 gap-1.5">
-                                            <div className="flex justify-between w-full">
+                                        <div className="flex justify-between items-center w-full -mb-1">
+                                            <div>
                                                 <span className="text-xs font-medium">{best.name}</span>
-                                                <span className="text-xs text-gray-400">{best.model}</span>
+                                                <span className="text-xs text-gray-400"> - {best.description}</span>
                                             </div>
+                                            <span className="text-xs text-gray-400">{best.model}</span>
                                         </div>
                                         <div className="flex items-center">
                                             <AnimatedProgressBar percentage={best.score} className="bg-gradient-to-r from-purple-500 to-blue-500" inView={isRightInView} />
@@ -132,7 +134,7 @@ const TrustedAnswersSection = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-12">
                         <h1 className="text-5xl title mb-8 py-1">Answers You Can Trust</h1>
-                        <p className="text-center max-w-2xl mx-auto mb-6 subtitle">Access the world's most advanced AI models for accurate, comprehensive assistance across all subjects. From general knowledge to complex reasoning, our toolkit connects you to the best models for every task.</p>
+                        <p className="text-center max-w-2xl mx-auto mb-6 subtitle">Access the world's most advanced AI models for accurate, comprehensive assistance across all subjects.</p>
 
                         <div className="mb-6 inline-flex items-center bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-full px-4 py-2 text-sm">
                             <span className="text-purple-300 font-medium">While competitors rely on just GPT-4o</span>

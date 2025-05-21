@@ -131,7 +131,10 @@
             loginForm: qs('loginForm'),
             overlay: qs('loginOverlay'),
             userInfo: qs('userInfoContainer'),
-            modelSection: qs('modelSelectionContainer')
+            modelSection: qs('modelSelectionContainer'),
+            subscribeButton: qs('subscribeButton'),
+            learnMoreButton: qs('learnMoreButton'),
+            manageButton: qs('manageButton')
         };
 
         if (window.supabase) {
@@ -144,6 +147,18 @@
         elems.stealthButton?.addEventListener('click', () => toggleStealth(elems));
         bindModelChange(elems.primaryModel, 'primaryModel');
         bindModelChange(elems.secondaryModel, 'secondaryModel');
+
+        elems.subscribeButton?.addEventListener('click', () => {
+            chrome.tabs.create({ url: 'https://www.canvastoolkit.com/login' });
+        });
+
+        elems.manageButton?.addEventListener('click', () => {
+            chrome.tabs.create({ url: 'https://www.canvastoolkit.com/login' });
+        });
+
+        elems.learnMoreButton?.addEventListener('click', () => {
+            chrome.tabs.create({ url: 'https://www.canvastoolkit.com/' });
+        });
 
         const { data: { session }, error } = await supabase.auth.getSession();
         if (session) {

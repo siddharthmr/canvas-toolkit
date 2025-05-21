@@ -201,7 +201,7 @@ export default function AccountPage() {
                     {profileData && (
                         <>
                             <div>
-                                <dt className="font-medium text-gray-400">Credits:</dt>
+                                <dt className="font-medium text-gray-400">Monthly Credit Level Remaining:</dt>
                                 <dd className="text-gray-200 tabular-nums">{creditsDisplay}</dd>
                             </div>
                             <div>
