@@ -21,14 +21,10 @@
 
 A student-focused Chrome extension and Next.js website that seamlessly integrates AI into Canvas LMS. Get real-time quiz assistance, automate workflows, and minimize intrusive monitoring.
 
----
-
 ## Product Links
 
 -   **Website**: <a href="https://canvastoolkit.com" target="_blank">canvastoolkit.com</a>
 -   **Chrome Extension:**
-
----
 
 ## Tech Stack
 
@@ -41,8 +37,6 @@ A student-focused Chrome extension and Next.js website that seamlessly integrate
 -   **Supabase** - Handles user authentication, stores user profiles (credits, subscription metadata), and runs an Edge Function proxy for securely calling the OpenRouter API.
 -   **OpenRouter API** - Interfaces with models from OpenAI, Anthropic, Google, and Deepseek.
 -   **JavaScript/HTML/CSS**
-
----
 
 ## Project Structure
 
@@ -75,8 +69,6 @@ canvas-toolkit/
         └── utils/supabase
 ```
 
----
-
 ## Installation
 
 1. **Clone the repo**
@@ -103,8 +95,6 @@ canvas-toolkit/
     ```bash
     npm run dev
     ```
-
----
 
 ## Configuration
 
