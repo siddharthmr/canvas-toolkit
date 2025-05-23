@@ -24,7 +24,7 @@ A student-focused Chrome extension and Next.js website that seamlessly integrate
 ## Product Links
 
 -   **Website**: <a href="https://canvastoolkit.com" target="_blank">canvastoolkit.com</a>
--   **Chrome Extension:**
+-   **Chrome Extension:** <a href="https://chromewebstore.google.com/detail/canvastoolkit/pahbokefgdmeialdpkjknghmfnnbllme" target="_blank">Chrome Web Store Listing</a>
 
 ## Tech Stack
 
@@ -36,6 +36,7 @@ A student-focused Chrome extension and Next.js website that seamlessly integrate
 -   **Stripe** - Handles payment processing, webhooks, and customer portal integration.
 -   **Supabase** - Handles user authentication, stores user profiles (credits, subscription metadata), and runs an Edge Function proxy for securely calling the OpenRouter API.
 -   **OpenRouter API** - Interfaces with models from OpenAI, Anthropic, Google, and Deepseek.
+-   **Typescript**
 -   **JavaScript/HTML/CSS**
 
 ## Project Structure
