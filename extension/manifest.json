@@ -2,7 +2,7 @@
     "update_url": "https://clients2.google.com/service/update2/crx",
     "manifest_version": 3,
     "name": "CanvasToolkit",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Enhance your Canvas learning experience",
     "action": {
         "default_popup": "src/popup/popup.html",
@@ -40,7 +40,7 @@
                 "src/utils/utils.js",
                 "src/content/classicQuizzes.js",
                 "src/content/newQuizzes.js",
-                "src/content/quizLoader.js"
+                "src/content/quizAutoAnswer.js"
             ],
             "all_frames": true
         }

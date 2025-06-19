@@ -49,5 +49,3 @@ extension/.prettierrc
 extension/prettier.config.js
 extension/eslint.config.js
 extension/eslint.config.mjs
-extension/src/content/overrideListeners.js
-extension/src/content/quizLoader.js

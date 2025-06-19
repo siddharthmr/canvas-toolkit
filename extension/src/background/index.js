@@ -25,8 +25,8 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('CanvasToolkit context menu created/updated for Image Data.');
     chrome.scripting.registerContentScripts([
         {
-            id: 'override-listeners',
-            js: ['src/content/overrideListeners.js'],
+            id: 'listener-shiv',
+            js: ['src/content/listenerShiv.js'],
             matches: ['*://*.instructure.com/*'],
             world: 'MAIN',
             allFrames: true,
