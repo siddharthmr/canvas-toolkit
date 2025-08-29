@@ -27,13 +27,6 @@
         });
     }
 
-    function clearApiKey(elems) {
-        chrome.storage.sync.remove('openRouterApiKey', () => {
-            elems.apiKeyInput.value = '';
-            elems.clearApiKeyButton.style.display = 'none';
-        });
-    }
-
     function loadSettings(elems) {
         chrome.storage.sync.get(['primaryModel', 'secondaryModel', 'stealthModeEnabled', 'openRouterApiKey'], (data) => {
             if (elems.primaryModel && data.primaryModel) elems.primaryModel.value = data.primaryModel;
@@ -43,7 +36,6 @@
             elems.stealthButton.classList.toggle('active', on);
             if (data.openRouterApiKey) {
                 elems.apiKeyInput.value = data.openRouterApiKey;
-                elems.clearApiKeyButton.style.display = 'block';
             }
         });
     }
@@ -53,17 +45,13 @@
             primaryModel: qs('primaryModel'),
             secondaryModel: qs('secondaryModel'),
             stealthButton: qs('stealthModeButton'),
-            apiKeyInput: qs('apiKeyInput'),
-            clearApiKeyButton: qs('clearApiKeyButton')
+            apiKeyInput: qs('apiKeyInput')
         };
 
         elems.stealthButton?.addEventListener('click', () => toggleStealth(elems));
-        elems.clearApiKeyButton?.addEventListener('click', () => clearApiKey(elems));
         elems.apiKeyInput?.addEventListener('input', () => {
             const key = elems.apiKeyInput.value.trim();
-            chrome.storage.sync.set({ openRouterApiKey: key }, () => {
-                elems.clearApiKeyButton.style.display = key ? 'block' : 'none';
-            });
+            chrome.storage.sync.set({ openRouterApiKey: key });
         });
         bindModelChange(elems.primaryModel, 'primaryModel');
         bindModelChange(elems.secondaryModel, 'secondaryModel');

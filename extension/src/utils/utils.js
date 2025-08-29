@@ -101,6 +101,7 @@
         }
         prompt += `\n\nExample Response Format: ${exampleFormat}`;
         const messageContent = [{ type: 'text', text: prompt }];
+        console.log('[CanvasToolkit] Prompt to OpenRouter:\n' + prompt);
         if (imageDataUrl) {
             if (typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image')) {
                 messageContent.push({
