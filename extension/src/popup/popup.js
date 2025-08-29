@@ -4,15 +4,17 @@
     function toggleStealth(elems) {
         chrome.storage.sync.get(['stealthModeEnabled'], ({ stealthModeEnabled }) => {
             const enabled = !stealthModeEnabled;
-            chrome.storage.sync.set({
-                primaryModel: elems.primaryModel.value,
-                secondaryModel: elems.secondaryModel.value,
-                stealthModeEnabled: enabled,
-                openRouterApiKey: elems.apiKeyInput.value.trim()
-            }, () => {
-                elems.stealthButton.textContent = `Stealth Mode: ${enabled ? 'On' : 'Off'}`;
-                elems.stealthButton.classList.toggle('active', enabled);
-            });
+            chrome.storage.sync.set(
+                {
+                    primaryModel: elems.primaryModel.value,
+                    secondaryModel: elems.secondaryModel.value,
+                    stealthModeEnabled: enabled
+                },
+                () => {
+                    elems.stealthButton.textContent = `Stealth Mode: ${enabled ? 'On' : 'Off'}`;
+                    elems.stealthButton.classList.toggle('active', enabled);
+                }
+            );
         });
     }
 
@@ -22,13 +24,6 @@
             chrome.storage.sync.get(['stealthModeEnabled'], ({ stealthModeEnabled }) => {
                 chrome.storage.sync.set({ [key]: el.value, stealthModeEnabled });
             });
-        });
-    }
-
-    function saveApiKey(elems) {
-        const key = elems.apiKeyInput.value.trim();
-        chrome.storage.sync.set({ openRouterApiKey: key }, () => {
-            elems.clearApiKeyButton.style.display = key ? 'block' : 'none';
         });
     }
 
@@ -59,13 +54,17 @@
             secondaryModel: qs('secondaryModel'),
             stealthButton: qs('stealthModeButton'),
             apiKeyInput: qs('apiKeyInput'),
-            saveApiKeyButton: qs('saveApiKeyButton'),
             clearApiKeyButton: qs('clearApiKeyButton')
         };
 
         elems.stealthButton?.addEventListener('click', () => toggleStealth(elems));
-        elems.saveApiKeyButton?.addEventListener('click', () => saveApiKey(elems));
         elems.clearApiKeyButton?.addEventListener('click', () => clearApiKey(elems));
+        elems.apiKeyInput?.addEventListener('input', () => {
+            const key = elems.apiKeyInput.value.trim();
+            chrome.storage.sync.set({ openRouterApiKey: key }, () => {
+                elems.clearApiKeyButton.style.display = key ? 'block' : 'none';
+            });
+        });
         bindModelChange(elems.primaryModel, 'primaryModel');
         bindModelChange(elems.secondaryModel, 'secondaryModel');
 

@@ -1,6 +1,11 @@
 (() => {
     const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-    const VISION_MODELS = ['openai/gpt-4o', 'google/gemini-2.5-pro-preview'];
+    const VISION_MODELS = [
+        'openai/gpt-4o',
+        'openai/gpt-5',
+        'openai/gpt-5-mini',
+        'google/gemini-2.5-pro-preview'
+    ];
 
     const isVisionModel = (m) => VISION_MODELS.includes(m);
 
@@ -10,6 +15,8 @@
         return n
             .replace(/-2024-\d{2}-\d{2}$/, '')
             .replace(/-latest$/, '')
+            .replace('gpt-5-mini', 'GPT-5 mini')
+            .replace('gpt-5', 'GPT-5')
             .replace('gpt-4o', 'GPT-4o')
             .replace('o4-mini', 'o4 mini')
             .replace('deepseek-r1:nitro', 'DS R1 Nitro')
@@ -94,7 +101,7 @@
         }
         prompt += `\n\nExample Response Format: ${exampleFormat}`;
         const messageContent = [{ type: 'text', text: prompt }];
-        if (imageDataUrl && questionType === 'indexed_choice') {
+        if (imageDataUrl) {
             if (typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image')) {
                 messageContent.push({
                     type: 'image_url',
