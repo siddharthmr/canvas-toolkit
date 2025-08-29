@@ -37,8 +37,8 @@
 
     const runWithModel = (modelId) =>
         (async () => {
-            const token = await U.getSupabaseToken();
-            if (!token) return alert('Please log in via the popup first.');
+            const apiKey = await U.getOpenRouterKey();
+            if (!apiKey) return alert('Please set your OpenRouter API key in the popup.');
 
             const img = U.isVisionModel(modelId)
                 ? await U.getImageDataUrl()
@@ -48,7 +48,7 @@
             if (!question || !choices.length)
                 return alert('Could not read quiz.');
 
-            const res = await U.callEdgeFunction(token, {
+            const res = await U.callOpenRouter(apiKey, {
                 model: modelId,
                 questionType: 'indexed_choice',
                 questionText: question,

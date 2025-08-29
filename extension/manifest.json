@@ -13,8 +13,7 @@
     "host_permissions": [
         "*://*.instructure.com/*",
         "*://*.canvas-user-content.com/*",
-        "https://openrouter.ai/*",
-        "https://jshtldlivafisozrhdil.supabase.co/*"
+        "https://openrouter.ai/*"
     ],
     "icons": {
         "16": "public/icons/icon16.png",

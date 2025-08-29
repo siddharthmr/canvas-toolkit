@@ -1,7 +1,5 @@
 (() => {
-    const EDGE_FUNCTION_URL = 'https://jshtldlivafisozrhdil.supabase.co/functions/v1/openrouter-proxy';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaHRsZGxpdmFmaXNvenJoZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNTI5MjIsImV4cCI6MjA1NzkyODkyMn0.3yP1Y-oROzwVta_6v3QJpDvnfNlGWaMCs1I_04rYJKU';
-
+    const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
     const VISION_MODELS = ['openai/gpt-4o', 'google/gemini-2.5-pro-preview'];
 
     const isVisionModel = (m) => VISION_MODELS.includes(m);
@@ -20,18 +18,16 @@
             .replace('gemini-2.5-pro-preview', 'Gemini 2.5 Pro');
     };
 
-    const getSupabaseToken = () =>
+    const getOpenRouterKey = () =>
         new Promise((resolve) =>
-            chrome.storage.local.get(['supabase_session'], (d) =>
-                resolve(d?.supabase_session?.access_token || null)
+            chrome.storage.sync.get(['openRouterApiKey'], (d) =>
+                resolve(d?.openRouterApiKey || null)
             )
         );
 
     const getImageDataUrl = async () => {
         try {
-            const r = await chrome.runtime.sendMessage({
-                type: 'getPromptImageData'
-            });
+            const r = await chrome.runtime.sendMessage({ type: 'getPromptImageData' });
             if (r?.success && r.dataUrl) {
                 console.log(
                     '[CanvasToolkit] Vision-model prompt will include image data ' +
@@ -39,37 +35,140 @@
                 );
                 return r.dataUrl;
             }
-            console.log(
-                '[CanvasToolkit] No image data attached to this prompt'
-            );
+            console.log('[CanvasToolkit] No image data attached to this prompt');
             return null;
         } catch {
             return null;
         }
     };
 
-    const callEdgeFunction = async (token, payload) => {
-        const res = await fetch(EDGE_FUNCTION_URL, {
+    function buildOpenRouterPrompt(payload) {
+        const { questionType, questionText, choices, imageDataUrl } = payload;
+        let prompt =
+            "You are an API. Respond *only* with a valid JSON object containing a single key ";
+        let exampleFormat = '';
+        let choicesString = '';
+        switch (questionType) {
+            case 'multiple_answers_question':
+                prompt +=
+                    "'answer'. The value of 'answer' should be an array of strings, where each string is the unique identifier corresponding to *all* correct answer choices.";
+                choicesString = choices
+                    .map(
+                        (c) =>
+                            `"${c.identifier}": "${(c.text || '').replace(/"/g, '\\"')}"`
+                    )
+                    .join(',\n  ');
+                exampleFormat = '{"answer": ["id_1", "id_3"]}';
+                break;
+            case 'multiple_choice_question':
+            case 'true_false_question':
+                prompt +=
+                    "'answer'. The value of 'answer' should be a single string, which is the unique identifier of the *one* correct answer choice.";
+                choicesString = choices
+                    .map(
+                        (c) =>
+                            `"${c.identifier}": "${(c.text || '').replace(/"/g, '\\"')}"`
+                    )
+                    .join(',\n  ');
+                exampleFormat = '{"answer": "id_2"}';
+                break;
+            case 'indexed_choice':
+                prompt +=
+                    "'answer_index'. The value of 'answer_index' should be the 1-based integer index of the correct answer choice.";
+                choicesString = choices
+                    .map((c) => `${c.index}: ${(c.text || '').replace(/"/g, '\\"')}`)
+                    .join('\n');
+                exampleFormat = '{"answer_index": 3}';
+                break;
+            default:
+                throw new Error(`Unsupported questionType: ${questionType}`);
+        }
+        prompt += `\n\nQuestion: ${questionText || ''}\n\nChoices`;
+        if (questionType === 'indexed_choice') {
+            prompt += ` (Index: Text):\n${choicesString}`;
+        } else {
+            prompt += ` (Identifier: Text):\n{\n  ${choicesString}\n}`;
+        }
+        if (imageDataUrl) {
+            prompt += '\n\nImage data is included with this request.';
+        }
+        prompt += `\n\nExample Response Format: ${exampleFormat}`;
+        const messageContent = [{ type: 'text', text: prompt }];
+        if (imageDataUrl && questionType === 'indexed_choice') {
+            if (typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image')) {
+                messageContent.push({
+                    type: 'image_url',
+                    image_url: { url: imageDataUrl }
+                });
+                console.log('Including image data in OpenRouter payload.');
+            } else {
+                console.warn('Invalid or missing imageDataUrl format, ignoring image.');
+            }
+        }
+        return messageContent;
+    }
+
+    function parseOpenRouterResponse(openRouterData, questionType) {
+        const content = openRouterData?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string') {
+            throw new Error('Response content is not a string.');
+        }
+        const parsedJson = JSON.parse(content);
+        switch (questionType) {
+            case 'multiple_answers_question':
+                if (
+                    parsedJson &&
+                    Array.isArray(parsedJson.answer) &&
+                    parsedJson.answer.every((item) => typeof item === 'string')
+                )
+                    return parsedJson.answer;
+                throw new Error("Expected 'answer' array of strings not found.");
+            case 'multiple_choice_question':
+            case 'true_false_question':
+                if (parsedJson && typeof parsedJson.answer === 'string')
+                    return parsedJson.answer;
+                throw new Error("Expected 'answer' string not found.");
+            case 'indexed_choice':
+                if (parsedJson && typeof parsedJson.answer_index === 'number') {
+                    if (parsedJson.answer_index >= 1) return parsedJson.answer_index;
+                    throw new Error(
+                        `Invalid answer_index received: ${parsedJson.answer_index}`
+                    );
+                }
+                throw new Error("Expected 'answer_index' number not found.");
+            default:
+                throw new Error(
+                    `Cannot parse response for unsupported questionType: ${questionType}`
+                );
+        }
+    }
+
+    const callOpenRouter = async (apiKey, payload) => {
+        const messages = buildOpenRouterPrompt(payload);
+        const body = {
+            model: payload.model,
+            messages: [{ role: 'user', content: messages }],
+            response_format: { type: 'json_object' }
+        };
+        const res = await fetch(OPENROUTER_API_URL, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${token}`,
-                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(body)
         });
-        console.log(payload);
         if (!res.ok) throw new Error(await res.text());
-        return res.json();
+        const data = await res.json();
+        return { result: parseOpenRouterResponse(data, payload.questionType) };
     };
 
     window.CanvasToolkitUtils = {
-        EDGE_FUNCTION_URL,
-        SUPABASE_ANON_KEY,
+        OPENROUTER_API_URL,
         isVisionModel,
         getDisplayModelName,
-        getSupabaseToken,
+        getOpenRouterKey,
         getImageDataUrl,
-        callEdgeFunction
+        callOpenRouter
     };
 })();

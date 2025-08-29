@@ -103,13 +103,6 @@ label:first-of-type {
     border: 1px solid var(--border-primary);
 }
 
-.userInfoContainer {
-    flex-direction: row;
-    font-size: 0.9em;
-    margin-top: 30px;
-    margin-bottom: -10px;
-}
-
 .header {
     width: 100%;
     display: flex;
@@ -135,33 +128,6 @@ label:first-of-type {
     margin-bottom: -10px;
 }
 
-.userInfoDetails {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.creditsDisplay {
-    color: var(--text-secondary);
-}
-
-.userInfoActions {
-    display: flex;
-    flex-direction: row; 
-    align-items: center; 
-    gap: 0px;
-}
-
-.userInfoBtn {
-    padding: 6px 12px;
-    font-size: 0.85em;
-    min-width: 70px; 
-    height: auto; 
-    margin-top: 0; 
-    width: auto; 
-}
-
 .container>p {
     color: var(--text-primary);
 }
@@ -180,62 +146,6 @@ label:first-of-type {
 .button-secondary {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-}
-
-.loginOverlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    z-index: 10;
-    padding: 0;
-}
-
-.login-form form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 80%;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-.action-buttons {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 5px;
-}
-
-.password-login-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 5px;
-    margin: 3px 0;
-}
-
-.password-login-row input {
-    flex: 4;
-    margin: 0;
-    height: 35px;
-}
-
-.password-login-row button {
-    flex: 1;
-    margin: 0;
-    padding: 0 8px;
-    height: 35px;
 }
 
 .blurred {
@@ -260,76 +170,6 @@ label:first-of-type {
     font-size: 0.8em;
     color: var(--text-secondary);
     margin-top: 10px;
-}
-
-.creditsProgressBarContainer {
-    background-color: var(--bg-tertiary);
-    border-radius: 20px;
-    padding: 3px;
-    width: 150px;
-    height: 18px;
-    display: flex;
-    align-items: start;
-    position: relative;
-    border: 1px solid var(--border-primary);
-}
-
-.creditsProgressBar {
-    background: linear-gradient(to right, #8A2BE2, #4169E1);
-    height: 100%;
-    border-radius: 20px;
-    width: 0%;
-    transition: width 0.3s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.creditsPercentageDisplay {
-    color: white;
-    font-size: 0.8em;
-    white-space: nowrap;
-}
-
-.tooltip {
-  position: relative;
-  display: flex;
-}
-
-.tooltip .tooltiptext {
-  visibility: hidden;
-  width: auto; 
-  min-width: 180px; 
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  text-align: center;
-  border-radius: 6px;
-  padding: 8px 12px;
-  border: 1px solid var(--border-primary);
-  position: absolute;
-  z-index: 100; 
-  top: 135%; 
-  left: 50%;
-  transform: translateX(-50%); 
-  opacity: 0;
-  transition: opacity 0.25s ease-in-out;
-}
-
-.tooltip .tooltiptext::after {
-  content: "";
-  position: absolute;
-  bottom: 100%; 
-  left: 50%;
-  margin-left: -5px; 
-  border-width: 5px;
-  border-style: solid;
-  border-color: transparent transparent var(--bg-tertiary) transparent; 
-}
-
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
 }
 
 .discord-icon-container {

@@ -99,8 +99,8 @@
     const handleClick = (e, qEl, modelId) => {
         e.preventDefault();
         (async () => {
-            const token = await U.getSupabaseToken();
-            if (!token) return alert('Please log in via the popup first.');
+            const apiKey = await U.getOpenRouterKey();
+            if (!apiKey) return alert('Please set your OpenRouter API key in the popup.');
 
             const img = U.isVisionModel(modelId)
                 ? await U.getImageDataUrl()
@@ -124,7 +124,7 @@
             btn.disabled = true;
 
             try {
-                const res = await U.callEdgeFunction(token, payload);
+                const res = await U.callOpenRouter(apiKey, payload);
                 selectAnswer(qEl, res.result, type);
             } catch (err) {
                 console.error(err);
@@ -171,7 +171,7 @@
             ['primaryModel', 'secondaryModel', 'stealthModeEnabled'],
             (d) => {
                 const primary = d.primaryModel || 'openai/gpt-4o';
-                const secondary = d.secondaryModel || 'openai/o3-mini';
+                const secondary = d.secondaryModel || 'openai/o4-mini';
                 const opacity = d.stealthModeEnabled === false ? '1' : '0';
 
                 addButtons(primary, secondary, opacity);
