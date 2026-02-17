@@ -4,7 +4,7 @@
         'openai/gpt-4o',
         'openai/gpt-5',
         'openai/gpt-5-mini',
-        'google/gemini-2.5-pro-preview'
+        'google/gemini-3-pro-preview'
     ];
 
     const isVisionModel = (m) => VISION_MODELS.includes(m);
@@ -22,7 +22,7 @@
             .replace('deepseek-r1:nitro', 'DS R1 Nitro')
             .replace('deepseek-r1', 'DS R1')
             .replace('deepseek-chat', 'DS V3')
-            .replace('gemini-2.5-pro-preview', 'Gemini 2.5 Pro');
+            .replace('gemini-3-pro-preview', 'Gemini 3 Pro');
     };
 
     const getOpenRouterKey = () =>
