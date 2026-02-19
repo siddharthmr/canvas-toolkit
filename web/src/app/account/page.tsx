@@ -1,6 +1,6 @@
 'use client';
 
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
@@ -9,6 +9,13 @@ import CheckoutButton from '@/components/CheckoutButton';
 function formatSubscriptionStatus(status: string | null): string {
     if (!status) return 'N/A';
     return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+}
+
+function formatPlanTier(tier: string | null): string {
+    if (!tier) return 'None';
+    if (tier === 'stealth') return 'Stealth Mode';
+    if (tier === 'ai') return 'AI Integration';
+    return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
 interface User {
@@ -22,9 +29,11 @@ interface ProfileData {
     current_period_end: string | null;
     stripe_customer_id: string | null;
     stripe_subscription_id: string | null;
+    plan_tier: string | null;
 }
 
-const PRODUCT_ID = 'prod_SKf5FosciyojiY';
+const STEALTH_PRODUCT_ID = 'prod_TzgEBiCV7UhyXS';
+const AI_PRODUCT_ID = 'prod_TzgEPgGosGk6DQ';
 
 export default function AccountPage() {
     const supabase = createClient();
@@ -38,7 +47,8 @@ export default function AccountPage() {
     const [isPortalLoading, setIsPortalLoading] = useState(false);
     const [portalError, setPortalError] = useState<string | null>(null);
 
-    const [productPriceId, setProductPriceId] = useState<string | null>(null);
+    const [stealthPriceId, setStealthPriceId] = useState<string | null>(null);
+    const [aiPriceId, setAiPriceId] = useState<string | null>(null);
     const [isPriceLoading, setIsPriceLoading] = useState<boolean>(false);
     const [priceFetchError, setPriceFetchError] = useState<string | null>(null);
 
@@ -64,7 +74,8 @@ export default function AccountPage() {
                     subscription_status,
                     current_period_end,
                     stripe_customer_id,
-                    stripe_subscription_id
+                    stripe_subscription_id,
+                    plan_tier
                 `
                 )
                 .eq('id', userId)
@@ -73,7 +84,7 @@ export default function AccountPage() {
             if (profileError) {
                 if (profileError.code === 'PGRST116') {
                     console.warn(`Profile not found for user ${userId}. Displaying basic info.`);
-                    setProfileData({ credits: 'N/A', subscription_status: null, current_period_end: null, stripe_customer_id: 'Not linked', stripe_subscription_id: 'None' });
+                    setProfileData({ credits: 'N/A', subscription_status: null, current_period_end: null, stripe_customer_id: 'Not linked', stripe_subscription_id: 'None', plan_tier: null });
                 } else {
                     console.error('Error fetching user profile:', profileError);
                     setError('Error loading account details.');
@@ -88,32 +99,52 @@ export default function AccountPage() {
     }, [supabase, router]);
 
     useEffect(() => {
-        if (profileData && profileData.subscription_status !== 'active' && !productPriceId && !isPriceLoading) {
-            const fetchProductPriceId = async () => {
+        if (profileData && profileData.subscription_status !== 'active' && !isPriceLoading) {
+            const fetchPrices = async () => {
                 setIsPriceLoading(true);
                 setPriceFetchError(null);
                 try {
-                    const response = await fetch(`/api/product-info?productId=${PRODUCT_ID}`);
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || `Failed to fetch product info (status ${response.status})`);
+                    const [stealthRes, aiRes] = await Promise.all([
+                        fetch(`/api/product-info?productId=${STEALTH_PRODUCT_ID}`),
+                        fetch(`/api/product-info?productId=${AI_PRODUCT_ID}`)
+                    ]);
+
+                    if (stealthRes.ok) {
+                        const data = await stealthRes.json();
+                        if (data.priceId) setStealthPriceId(data.priceId);
                     }
-                    const data = await response.json();
-                    if (data.priceId) {
-                        setProductPriceId(data.priceId);
-                    } else {
-                        throw new Error('Price ID not found in response from API.');
+                    if (aiRes.ok) {
+                        const data = await aiRes.json();
+                        if (data.priceId) setAiPriceId(data.priceId);
                     }
                 } catch (err: any) {
-                    console.error('Error fetching product price ID:', err);
-                    setPriceFetchError(err.message || 'Could not load subscription option.');
+                    console.error('Error fetching prices:', err);
+                    setPriceFetchError(err.message || 'Could not load subscription options.');
                 }
                 setIsPriceLoading(false);
             };
 
-            fetchProductPriceId();
+            fetchPrices();
         }
-    }, [profileData, productPriceId, isPriceLoading]);
+
+        if (profileData?.plan_tier === 'stealth' && profileData.subscription_status === 'active' && !aiPriceId && !isPriceLoading) {
+            const fetchAiPrice = async () => {
+                setIsPriceLoading(true);
+                try {
+                    const res = await fetch(`/api/product-info?productId=${AI_PRODUCT_ID}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.priceId) setAiPriceId(data.priceId);
+                    }
+                } catch (err: any) {
+                    console.error('Error fetching AI price:', err);
+                }
+                setIsPriceLoading(false);
+            };
+
+            fetchAiPrice();
+        }
+    }, [profileData, isPriceLoading, aiPriceId]);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -174,10 +205,13 @@ export default function AccountPage() {
         );
     }
 
+    const isActive = profileData?.subscription_status === 'active';
+    const isAiPlan = profileData?.plan_tier === 'ai';
+    const isStealthPlan = profileData?.plan_tier === 'stealth';
+
     const creditsRaw = profileData?.credits;
     let creditsDisplay: string;
-
-    if (typeof creditsRaw === 'number' && !isNaN(creditsRaw)) {
+    if (isAiPlan && typeof creditsRaw === 'number' && !isNaN(creditsRaw)) {
         const percentage = (creditsRaw / 2.5) * 100;
         creditsDisplay = `${percentage.toFixed(2)}%`;
     } else {
@@ -185,6 +219,7 @@ export default function AccountPage() {
     }
 
     const status = formatSubscriptionStatus(profileData?.subscription_status ?? null);
+    const tierDisplay = formatPlanTier(profileData?.plan_tier ?? null);
     const periodEnd = profileData?.current_period_end ? format(new Date(profileData.current_period_end), 'PPP') : 'N/A';
     const customerId = profileData?.stripe_customer_id ?? 'Not linked';
     const subscriptionId = profileData?.stripe_subscription_id ?? 'None';
@@ -201,31 +236,70 @@ export default function AccountPage() {
                     {profileData && (
                         <>
                             <div>
-                                <dt className="font-medium text-gray-400">Monthly Credit Level Remaining:</dt>
-                                <dd className="text-gray-200 tabular-nums">{creditsDisplay}</dd>
+                                <dt className="font-medium text-gray-400">Current Plan:</dt>
+                                <dd className="text-gray-200">{tierDisplay}</dd>
                             </div>
                             <div>
                                 <dt className="font-medium text-gray-400">Subscription Status:</dt>
                                 <dd className="text-gray-200">{status}</dd>
                             </div>
-                            {profileData.subscription_status !== 'active' && (
-                                <div className="mt-6 p-4 border border-dashed border-yellow-600 rounded-lg bg-yellow-500/10">
-                                    <h3 className="text-lg font-semibold text-yellow-200 mb-2">Subscription Inactive</h3>
-                                    <p className="text-yellow-300 mb-3">Your subscription is not currently active. Please subscribe to unlock all premium features.</p>
-                                    {isPriceLoading && <p className="text-gray-400 animate-pulse">Loading subscription option...</p>}
-                                    {priceFetchError && <p className="text-red-400">Error: {priceFetchError}</p>}
-                                    {productPriceId && !isPriceLoading && !priceFetchError && (
-                                        <div className="mt-3">
-                                            <CheckoutButton priceId={productPriceId} />
-                                        </div>
-                                    )}
-                                    {!productPriceId && !isPriceLoading && !priceFetchError && profileData.subscription_status !== 'active' && <p className="text-orange-400">Subscription options are currently unavailable. Please check back later or contact support.</p>}
+
+                            {isAiPlan && isActive && (
+                                <div>
+                                    <dt className="font-medium text-gray-400">Monthly Credit Level Remaining:</dt>
+                                    <dd className="text-gray-200 tabular-nums">{creditsDisplay}</dd>
                                 </div>
                             )}
-                            <div>
-                                <dt className="font-medium text-gray-400">Current Period End / Renewal Date:</dt>
-                                <dd className="text-gray-200 tabular-nums">{periodEnd}</dd>
-                            </div>
+
+                            {/* No subscription — show both plans */}
+                            {!isActive && (
+                                <div className="mt-6 p-4 border border-dashed border-yellow-600 rounded-lg bg-yellow-500/10">
+                                    <h3 className="text-lg font-semibold text-yellow-200 mb-2">Subscription Inactive</h3>
+                                    <p className="text-yellow-300 mb-4">Your subscription is not currently active. Choose a plan to unlock premium features.</p>
+                                    {isPriceLoading && <p className="text-gray-400 animate-pulse">Loading subscription options...</p>}
+                                    {priceFetchError && <p className="text-red-400">Error: {priceFetchError}</p>}
+                                    {!isPriceLoading && !priceFetchError && (
+                                        <div className="space-y-3">
+                                            {stealthPriceId && (
+                                                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-[rgb(35,35,35)]">
+                                                    <div>
+                                                        <p className="text-gray-200 font-medium">Stealth Mode</p>
+                                                        <p className="text-gray-500 text-sm">$7.99/mo — Tab switch detection disabled</p>
+                                                    </div>
+                                                    <CheckoutButton priceId={stealthPriceId} />
+                                                </div>
+                                            )}
+                                            {aiPriceId && (
+                                                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-blue-500/20">
+                                                    <div>
+                                                        <p className="text-gray-200 font-medium">AI Integration</p>
+                                                        <p className="text-gray-500 text-sm">$10.99/mo — Stealth + AI answering</p>
+                                                    </div>
+                                                    <CheckoutButton priceId={aiPriceId} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Stealth plan active — show upgrade to AI */}
+                            {isStealthPlan && isActive && (
+                                <div className="mt-6 p-4 border border-dashed border-blue-600 rounded-lg bg-blue-500/10">
+                                    <h3 className="text-lg font-semibold text-blue-200 mb-2">Upgrade to AI Integration</h3>
+                                    <p className="text-blue-300 mb-3">Get AI-powered quiz answering on top of your stealth features for $10.99/mo.</p>
+                                    {aiPriceId && (
+                                        <CheckoutButton priceId={aiPriceId} />
+                                    )}
+                                </div>
+                            )}
+
+                            {isActive && (
+                                <div>
+                                    <dt className="font-medium text-gray-400">Current Period End / Renewal Date:</dt>
+                                    <dd className="text-gray-200 tabular-nums">{periodEnd}</dd>
+                                </div>
+                            )}
                             <div>
                                 <dt className="font-medium text-gray-400">Stripe Customer ID:</dt>
                                 <dd className="text-gray-300 text-sm break-all">{customerId}</dd>

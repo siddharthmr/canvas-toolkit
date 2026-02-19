@@ -111,21 +111,28 @@
     };
 
     const init = () =>
-        chrome.storage.sync.get(
-            ['primaryModel', 'secondaryModel', 'stealthModeEnabled'],
-            (d) => {
-                const p = d.primaryModel || 'openai/o4-mini';
-                const s = d.secondaryModel || 'openai/gpt-4o';
-                const op = d.stealthModeEnabled === false ? '1' : '0';
+        chrome.storage.local.get(['plan_tier'], (localData) => {
+            const planTier = localData.plan_tier;
+            const hasAi = planTier === 'ai';
 
-                if (window === window.top) {
-                    if (document.querySelector('iframe[title="Quizzes 2"]'))
-                        addMenuButtons(p, s, op);
-                } else {
-                    attachIframeListener();
+            if (!hasAi) return;
+
+            chrome.storage.sync.get(
+                ['primaryModel', 'secondaryModel', 'stealthModeEnabled'],
+                (d) => {
+                    const p = d.primaryModel || 'openai/o4-mini';
+                    const s = d.secondaryModel || 'openai/gpt-4o';
+                    const op = d.stealthModeEnabled ? '0' : '1';
+
+                    if (window === window.top) {
+                        if (document.querySelector('iframe[title="Quizzes 2"]'))
+                            addMenuButtons(p, s, op);
+                    } else {
+                        attachIframeListener();
+                    }
                 }
-            }
-        );
+            );
+        });
 
     document.readyState === 'loading'
         ? document.addEventListener('DOMContentLoaded', init)

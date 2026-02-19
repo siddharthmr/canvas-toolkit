@@ -14,25 +14,40 @@ export async function getProductPriceDetails(productId: string): Promise<Product
         const product = await stripe.products.retrieve(productId, {
             expand: ['default_price']
         });
-        
+
+        let resolvedPrice: Stripe.Price | null = null;
         const defaultPrice = product.default_price as Stripe.Price | null;
 
-        if (!defaultPrice || defaultPrice.deleted || typeof defaultPrice.unit_amount !== 'number') {
+        if (defaultPrice && !defaultPrice.deleted && typeof defaultPrice.unit_amount === 'number') {
+            resolvedPrice = defaultPrice;
+        } else {
+            const prices = await stripe.prices.list({
+                product: productId,
+                active: true,
+                type: 'recurring',
+                limit: 1
+            });
+            if (prices.data.length > 0 && typeof prices.data[0].unit_amount === 'number') {
+                resolvedPrice = prices.data[0];
+            }
+        }
+
+        if (!resolvedPrice || typeof resolvedPrice.unit_amount !== 'number') {
             return {
                 name: product.name ?? 'Product',
                 price: 'Price not available',
                 priceId: null,
-                error: 'Default price not found, deleted, or invalid for this product.'
+                error: 'No active price found for this product.'
             };
         }
 
         return {
             name: product.name ?? 'Subscription',
-            price: (defaultPrice.unit_amount / 100).toLocaleString('en-US', {
+            price: (resolvedPrice.unit_amount / 100).toLocaleString('en-US', {
                 style: 'currency',
-                currency: defaultPrice.currency
+                currency: resolvedPrice.currency
             }),
-            priceId: defaultPrice.id
+            priceId: resolvedPrice.id
         };
     } catch (error) {
         console.error(`Stripe API error fetching product details for (${productId}):`, error);

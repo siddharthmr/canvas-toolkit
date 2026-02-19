@@ -167,23 +167,30 @@
     };
 
     const init = () =>
-        chrome.storage.sync.get(
-            ['primaryModel', 'secondaryModel', 'stealthModeEnabled'],
-            (d) => {
-                const primary = d.primaryModel || 'openai/gpt-4o';
-                const secondary = d.secondaryModel || 'openai/o3-mini';
-                const opacity = d.stealthModeEnabled === false ? '1' : '0';
+        chrome.storage.local.get(['plan_tier'], (localData) => {
+            const planTier = localData.plan_tier;
+            const hasAi = planTier === 'ai';
 
-                addButtons(primary, secondary, opacity);
+            if (!hasAi) return;
 
-                const area = document.getElementById('questions') || document.body;
-                new MutationObserver(m =>
-                  m.some(x => [...x.addedNodes].some(n =>
-                    n.nodeType === 1 && (n.matches('.display_question') || n.querySelector('.display_question'))
-                  )) && addButtons(primary, secondary, opacity)
-                ).observe(area, { childList: true, subtree: true });
-            }
-        );
+            chrome.storage.sync.get(
+                ['primaryModel', 'secondaryModel', 'stealthModeEnabled'],
+                (d) => {
+                    const primary = d.primaryModel || 'openai/gpt-4o';
+                    const secondary = d.secondaryModel || 'openai/o3-mini';
+                    const opacity = d.stealthModeEnabled ? '0' : '1';
+
+                    addButtons(primary, secondary, opacity);
+
+                    const area = document.getElementById('questions') || document.body;
+                    new MutationObserver(m =>
+                      m.some(x => [...x.addedNodes].some(n =>
+                        n.nodeType === 1 && (n.matches('.display_question') || n.querySelector('.display_question'))
+                      )) && addButtons(primary, secondary, opacity)
+                    ).observe(area, { childList: true, subtree: true });
+                }
+            );
+        });
 
     document.readyState === 'loading'
         ? document.addEventListener('DOMContentLoaded', init)

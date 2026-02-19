@@ -14,7 +14,7 @@
         "*://*.instructure.com/*",
         "*://*.canvas-user-content.com/*",
         "https://openrouter.ai/*",
-        "https://jshtldlivafisozrhdil.supabase.co/*"
+        "https://hxpqkysrjeofpburzqwu.supabase.co/*"
     ],
     "icons": {
         "16": "public/icons/icon16.png",
@@ -26,7 +26,8 @@
     "permissions": [
         "storage",
         "contextMenus",
-        "scripting"
+        "scripting",
+        "identity"
     ],
     "background": {
         "service_worker": "src/background/index.js"

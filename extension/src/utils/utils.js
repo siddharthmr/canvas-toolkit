@@ -1,6 +1,6 @@
 (() => {
-    const EDGE_FUNCTION_URL = 'https://jshtldlivafisozrhdil.supabase.co/functions/v1/openrouter-proxy';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaHRsZGxpdmFmaXNvenJoZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNTI5MjIsImV4cCI6MjA1NzkyODkyMn0.3yP1Y-oROzwVta_6v3QJpDvnfNlGWaMCs1I_04rYJKU';
+    const EDGE_FUNCTION_URL = 'https://hxpqkysrjeofpburzqwu.supabase.co/functions/v1/openrouter-proxy';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cHFreXNyamVvZnBidXJ6cXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyOTg5MzMsImV4cCI6MjA4Njg3NDkzM30.EETUQhkrH-dxs03cKawD1LQ83yTu_kVJCSt5bt-Pgkw';
 
     const VISION_MODELS = ['openai/gpt-4o', 'google/gemini-2.5-pro-preview'];
 

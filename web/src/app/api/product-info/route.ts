@@ -1,19 +1,25 @@
 import { NextResponse } from 'next/server';
 import { getProductPriceDetails } from '@/lib/stripeUtils';
 
-const DEFAULT_PRODUCT_ID = 'prod_SKf5FosciyojiY';
+const VALID_PRODUCT_IDS = [
+    'prod_TzgEBiCV7UhyXS', // Stealth Mode
+    'prod_TzgEPgGosGk6DQ', // AI Integration
+    'prod_SKf5FosciyojiY'  // Legacy product
+];
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const queryProductId = searchParams.get('productId');
+    const productId = searchParams.get('productId');
 
-    const targetProductId = queryProductId || DEFAULT_PRODUCT_ID;
-
-    if (!targetProductId) {
+    if (!productId) {
         return NextResponse.json({ error: 'Product ID is required.' }, { status: 400 });
     }
 
-    const productInfo = await getProductPriceDetails(targetProductId);
+    if (!VALID_PRODUCT_IDS.includes(productId)) {
+        return NextResponse.json({ error: 'Invalid product ID.' }, { status: 400 });
+    }
+
+    const productInfo = await getProductPriceDetails(productId);
 
     if (productInfo.error || !productInfo.priceId) {
         return NextResponse.json({ error: productInfo.error || 'Could not retrieve a valid price ID.' }, { status: 500 });

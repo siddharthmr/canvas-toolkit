@@ -6,6 +6,18 @@ import { getSupabaseAdminClient } from '../../../lib/supabaseAdmin';
 const stripe = getStripe();
 const supabaseAdmin = getSupabaseAdminClient();
 
+const PRICE_TO_TIER: Record<string, string> = {
+    price_1T1gs9GGuo9uqrPQ5St2K4ih: 'stealth',
+    price_1T1gsFGGuo9uqrPQ5IjrrlD1: 'ai',
+    price_1RPzlNGGuo9uqrPQRPUlTuwh: 'ai' // legacy price
+};
+
+const PRICE_TO_CREDITS: Record<string, number> = {
+    price_1T1gs9GGuo9uqrPQ5St2K4ih: 0,
+    price_1T1gsFGGuo9uqrPQ5IjrrlD1: 2.5,
+    price_1RPzlNGGuo9uqrPQRPUlTuwh: 2.5 // legacy price
+};
+
 function extractSubAndCust(obj: any): { subscriptionId?: string; customerId?: string } {
     let subscriptionId: string | undefined;
     let customerId: string | undefined;
@@ -41,7 +53,7 @@ async function updateProfile(userId: string, payload: Record<string, any>) {
 }
 
 async function findProfileByCustomer(customerId: string) {
-    const { data, error } = await supabaseAdmin.from('profiles').select('id, credits').eq('stripe_customer_id', customerId).single();
+    const { data, error } = await supabaseAdmin.from('profiles').select('id, credits, plan_tier').eq('stripe_customer_id', customerId).single();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
@@ -50,6 +62,7 @@ async function findProfileByCustomer(customerId: string) {
 async function syncSubscription(sub: Stripe.Subscription) {
     const { id: subscriptionId, status } = sub;
     const current_period_end = sub.items.data[0]?.current_period_end;
+    const priceId = sub.items.data[0]?.price?.id ?? sub.items.data[0]?.price;
     const { customerId } = extractSubAndCust(sub);
 
     if (!customerId) {
@@ -62,20 +75,24 @@ async function syncSubscription(sub: Stripe.Subscription) {
         console.warn(`No profile for customer ${customerId}, skipping sync.`);
         return;
     }
-    console.log(current_period_end);
+
+    const tier = typeof priceId === 'string' ? (PRICE_TO_TIER[priceId] ?? null) : null;
+
     const payload: Record<string, any> = {
         stripe_subscription_id: subscriptionId,
         subscription_status: status,
-        current_period_end: toISOStringOrNull(current_period_end)
+        current_period_end: toISOStringOrNull(current_period_end),
+        plan_tier: tier
     };
 
     if (['canceled', 'incomplete_expired'].includes(status)) {
         payload.credits = 0;
         payload.current_period_end = null;
+        payload.plan_tier = null;
     }
 
     await updateProfile(profile.id, payload);
-    console.log(`Synced sub ${subscriptionId} (${status}) for user ${profile.id}.`);
+    console.log(`Synced sub ${subscriptionId} (${status}, tier=${tier}) for user ${profile.id}.`);
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
@@ -100,12 +117,10 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
         return;
     }
 
-    const priceToCredits: Record<string, number> = {
-        price_1RPzlNGGuo9uqrPQRPUlTuwh: 2.5
-    };
     const priceId = sub.items.data[0]?.price.id;
-    const credits = priceToCredits[priceId] ?? 0;
-    if (credits === 0) console.warn(`Unknown priceId ${priceId}, granting 0 credits.`);
+    const tier = PRICE_TO_TIER[priceId] ?? null;
+    const credits = PRICE_TO_CREDITS[priceId] ?? 0;
+    if (!tier) console.warn(`Unknown priceId ${priceId}, no tier or credits assigned.`);
 
     const periodEnd = toISOStringOrNull(sub.items.data[0]?.current_period_end);
 
@@ -113,10 +128,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
         credits,
         subscription_status: 'active',
         current_period_end: periodEnd,
-        stripe_subscription_id: subscriptionId
+        stripe_subscription_id: subscriptionId,
+        plan_tier: tier
     });
 
-    console.log(`Granted ${credits} credits to user ${profile.id} for invoice ${invoice.id}.`);
+    console.log(`Granted ${credits} credits (tier=${tier}) to user ${profile.id} for invoice ${invoice.id}.`);
 }
 
 export async function POST(req: NextRequest) {

@@ -1,5 +1,6 @@
 const CONTEXT_MENU_ID = 'CANVAS_TOOLKIT_ADD_IMAGE_DATA';
 const STORAGE_KEY = 'promptImageDataUrl';
+const SHIV_SCRIPT_ID = 'listener-shiv';
 
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
@@ -12,6 +13,33 @@ function blobToBase64(blob) {
     });
 }
 
+async function syncTabDetection() {
+    try {
+        const local = await chrome.storage.local.get(['plan_tier']);
+        const sync = await chrome.storage.sync.get(['tabDetectionEnabled']);
+        const hasPlan = local.plan_tier === 'stealth' || local.plan_tier === 'ai';
+        const shouldInject = hasPlan && !!sync.tabDetectionEnabled;
+
+        const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [SHIV_SCRIPT_ID] });
+
+        if (shouldInject && registered.length === 0) {
+            await chrome.scripting.registerContentScripts([{
+                id: SHIV_SCRIPT_ID,
+                js: ['src/content/listenerShiv.js'],
+                matches: ['*://*.instructure.com/*'],
+                world: 'MAIN',
+                allFrames: true,
+                matchOriginAsFallback: true,
+                runAt: 'document_start'
+            }]);
+        } else if (!shouldInject && registered.length > 0) {
+            await chrome.scripting.unregisterContentScripts({ ids: [SHIV_SCRIPT_ID] });
+        }
+    } catch (err) {
+        console.error('syncTabDetection error:', err);
+    }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.remove('CANVAS_TOOLKIT_ADD_IMAGE', () => {
         if (chrome.runtime.lastError) {
@@ -22,26 +50,27 @@ chrome.runtime.onInstalled.addListener(() => {
         title: 'Use Image Data in Next Prompt',
         contexts: ['image']
     });
-    console.log('CanvasToolkit context menu created/updated for Image Data.');
-    chrome.scripting.registerContentScripts([
-        {
-            id: 'listener-shiv',
-            js: ['src/content/listenerShiv.js'],
-            matches: ['*://*.instructure.com/*'],
-            world: 'MAIN',
-            allFrames: true,
-            matchOriginAsFallback: true,
-            runAt: 'document_start'
-        }
-    ]);
+    syncTabDetection();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+    chrome.storage.session.remove(STORAGE_KEY);
+    syncTabDetection();
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.plan_tier) {
+        syncTabDetection();
+    }
+    if (area === 'sync' && changes.tabDetectionEnabled) {
+        syncTabDetection();
+    }
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === CONTEXT_MENU_ID && info.srcUrl) {
-        console.log('Image source URL captured:', info.srcUrl);
         try {
             const response = await fetch(info.srcUrl);
-            console.log(`Fetch response status: ${response.status}, OK: ${response.ok}`);
             if (!response.ok) {
                 let errorDetails = `HTTP error! status: ${response.status} ${response.statusText}`;
                 try {
@@ -51,7 +80,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 throw new Error(errorDetails);
             }
             const imageBlob = await response.blob();
-            console.log(`Image Blob fetched. Type: ${imageBlob.type}, Size: ${imageBlob.size}`);
             if (imageBlob.size === 0) throw new Error('Fetched image blob has zero size.');
             if (!imageBlob.type || !imageBlob.type.startsWith('image/'))
                 console.warn(`Blob MIME type "${imageBlob.type}" doesn't look like an image.`);
@@ -60,11 +88,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             if (!base64DataUrl || !base64DataUrl.startsWith('data:image'))
                 throw new Error('Failed to generate valid Base64 Data URL.');
 
-            console.log(
-                `Image encoded. Data URL starts with: ${base64DataUrl.substring(0, 60)}...`
-            );
             await chrome.storage.session.set({ [STORAGE_KEY]: base64DataUrl });
-            console.log('Image Base64 data URL saved to session storage.');
         } catch (error) {
             console.error('Error fetching or encoding image:', error);
             await chrome.storage.session.remove(STORAGE_KEY);
@@ -72,26 +96,68 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
 });
 
-chrome.runtime.onStartup.addListener(() => {
-    chrome.storage.session.remove(STORAGE_KEY);
-    console.log('Cleared any stale image data URL on startup.');
-});
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'googleSignIn') {
+        const SUPABASE_URL = 'https://hxpqkysrjeofpburzqwu.supabase.co';
+
+        (async () => {
+            try {
+                const redirectUrl = chrome.identity.getRedirectURL();
+                const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
+
+                const responseUrl = await new Promise((resolve, reject) => {
+                    chrome.identity.launchWebAuthFlow(
+                        { url: authUrl, interactive: true },
+                        (url) => {
+                            if (chrome.runtime.lastError) {
+                                reject(new Error(chrome.runtime.lastError.message));
+                            } else {
+                                resolve(url);
+                            }
+                        }
+                    );
+                });
+
+                const url = new URL(responseUrl);
+                const hashParams = new URLSearchParams(url.hash.substring(1));
+                const access_token = hashParams.get('access_token');
+                const refresh_token = hashParams.get('refresh_token');
+
+                if (!access_token || !refresh_token) {
+                    throw new Error('No tokens returned from Google sign-in.');
+                }
+
+                chrome.storage.local.set({
+                    supabase_session: { access_token, refresh_token }
+                });
+
+                sendResponse({ success: true, access_token, refresh_token });
+            } catch (err) {
+                if (err.message !== 'The user did not approve access.') {
+                    console.error('Google sign-in error:', err);
+                }
+                sendResponse({ success: false, error: err.message });
+            }
+        })();
+
+        return true;
+    }
+
+    if (message.type === 'syncTabDetection') {
+        syncTabDetection();
+        return false;
+    }
+
     if (message.type === 'getPromptImageData') {
-        console.log('Background script received request for image data.');
         (async () => {
             try {
                 const data = await chrome.storage.session.get(STORAGE_KEY);
                 const imageDataUrl = data ? data[STORAGE_KEY] : null;
 
                 if (imageDataUrl) {
-                    console.log('Background sending image data URL to content script.');
                     await chrome.storage.session.remove(STORAGE_KEY);
-                    console.log('Cleared image data URL from storage after sending.');
                     sendResponse({ success: true, dataUrl: imageDataUrl });
                 } else {
-                    console.log('Background found no image data URL to send.');
                     sendResponse({ success: true, dataUrl: null });
                 }
             } catch (error) {

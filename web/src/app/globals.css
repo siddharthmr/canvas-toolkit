@@ -64,3 +64,42 @@ button {
 *::after {
     font-family: inherit;
 }
+
+/* ── Hero Section — Brutalist ── */
+
+.hero-heading {
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 0.85;
+}
+
+.hero-heading-ghost,
+.hero-heading-solid {
+    font-size: clamp(1.8rem, 7vw, 7rem);
+}
+
+.hero-heading-ghost {
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(229, 229, 229, 0.3);
+    text-shadow: 0 0 40px rgba(229, 229, 229, 0.05);
+}
+
+.hero-floating-element {
+    mask-image: radial-gradient(
+        ellipse 90% 80% at 50% 40%,
+        black 40%,
+        transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+        ellipse 90% 80% at 50% 40%,
+        black 40%,
+        transparent 100%
+    );
+}
+
+/* MacBook mockup — fade bottom edge to page background */
+.macbook-fade-bottom {
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
