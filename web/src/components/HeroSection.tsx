@@ -2,25 +2,25 @@ import MacbookMockup from './macbook/MacbookMockup';
 
 const HeroSection = () => (
     <section className="relative w-full overflow-hidden -mt-[4.5rem] sm:-mt-20 pb-6 md:pb-10">
-        <div className="flex flex-col items-center pt-28 sm:pt-32">
+        <div className="flex flex-col items-center pt-28 sm:pt-32 gap-3 md:gap-4">
             {/* Heading */}
-            <h1 className="hero-heading text-center select-none px-6">
-                <span className="hero-heading-ghost block mb-4 md:mb-6">
+            <h1 className="text-center select-none px-6 text-6xl font-extrabold tracking-[-0.03em] leading-[0.98]">
+                <span className="hero-heading-ghost block mb-4">
                     Invisible Assistance
                 </span>
-                <span className="hero-heading-solid block text-[#E5E5E5]">
+                <span className="block text-[#E5E5E5]">
                     Visible Results
                 </span>
             </h1>
 
             {/* Description */}
-            <p className="max-w-2xl text-center text-[#E5E5E5]/70 text-xs md:text-[13px] leading-relaxed font-mono mt-8 md:mt-10 px-6">
-                CanvasToolkit is a Chrome extension that gives students an invisible edge. With monitoring tools tracking every tab switch, you need assistance that stays hidden. We provide discreet AI-powered tools that work seamlessly&nbsp;&mdash;&nbsp;completely undetected.
+            <p className="max-w-2xl text-center text-[#E5E5E5]/70 text-xs md:text-[13px] leading-relaxed font-mono px-6 mt-6">
+            Built in undetected AI assistance. Seamless tab tracking bypass.
             </p>
 
             {/* CTA group */}
-            <div className="flex justify-center w-full mt-8 md:mt-10 px-6">
-                <div className="flex flex-col items-center">
+            <div className="flex justify-center w-full px-6">
+                <div className="flex flex-col items-center gap-2">
                     <div className="flex flex-col sm:flex-row gap-3">
                         <a
                             href="https://chromewebstore.google.com/detail/canvastoolkit/pahbokefgdmeialdpkjknghmfnnbllme"
@@ -64,14 +64,14 @@ const HeroSection = () => (
                             Join Discord
                         </a>
                     </div>
-                    <p className="text-[10px] font-mono text-[#E5E5E5]/25 tracking-wide mt-4">
+                    <p className="text-[10px] font-mono text-[#E5E5E5]/25 tracking-wide mt-6 mb-6">
                         CanvasToolkit © {new Date().getFullYear()} · Viper Industries
                     </p>
                 </div>
             </div>
 
             {/* MacBook mockup */}
-            <div className="w-full mt-14 md:mt-20 px-6 md:px-12 lg:px-20">
+            <div className="w-full mt-8 md:mt-10 px-6 md:px-12 lg:px-20">
                 <MacbookMockup />
             </div>
         </div>

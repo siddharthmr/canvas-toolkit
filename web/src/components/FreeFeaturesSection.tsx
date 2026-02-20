@@ -186,7 +186,7 @@ const FreeFeaturesSection = () => (
             <div className="max-w-6xl mx-auto">
                 <div className="text-center mb-12">
                     <h2 className="text-[#E5E5E5] text-4xl md:text-5xl font-extrabold tracking-[-0.03em] leading-tight">
-                        Powerful Free Features
+                        Seamless Tab Tracking Bypass
                     </h2>
                     <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#344451]/70 bg-[#101419] px-3 py-2 text-[12px] md:text-[13px] text-[#c5d0d8]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#344451]" />
@@ -200,10 +200,6 @@ const FreeFeaturesSection = () => (
                             View Quiz Log documentation
                         </a>
                     </div>
-                    <p className="text-[#E5E5E5]/40 text-sm md:text-[15px] leading-relaxed mt-4 max-w-2xl mx-auto">
-                        Monitor tab-switch behavior and preserve session focus with logs that match the same minimal dark
-                        interface used across CanvasToolkit.
-                    </p>
                 </div>
 
                 <div className="flex flex-col lg:flex-row items-stretch gap-6 lg:gap-4">
