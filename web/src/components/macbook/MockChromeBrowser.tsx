@@ -11,7 +11,7 @@ const TabBar = () => (
 
         {/* Active tab */}
         <div
-            className="flex items-center gap-2 h-[28px] self-end px-4 rounded-t-lg text-[12px] text-[#E0E0E0] min-w-[120px] max-w-[200px] ml-1"
+            className="flex items-center gap-2 h-[28px] self-end px-4 rounded-t-lg text-[12px] text-[#E0E0E0] min-w-[180px] max-w-[260px] ml-1"
             style={{ background: '#282828' }}
         >
             <div className="w-4 h-4 rounded-sm bg-[#D44638] flex items-center justify-center shrink-0">

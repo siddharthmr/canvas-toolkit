@@ -62,21 +62,23 @@
 
         if (hasAi) {
             setDisplay(elems.creditsContainer, 'flex');
-            setDisplay(elems.userEmail, 'none');
+            setDisplay(elems.userStatusPill, 'none');
         } else if (currentUser) {
             setDisplay(elems.creditsContainer, 'none');
-            setDisplay(elems.userEmail, 'inline');
+            const label = hasStealth ? 'No AI credits' : 'No active plan';
+            setText(elems.userStatusPill, label);
+            setDisplay(elems.userStatusPill, 'inline-block');
         }
     }
 
     function updateAuthUI(elems) {
         if (currentUser) {
-            setText(elems.userEmail, currentUser.email);
             setDisplay(elems.loginOverlay, 'none');
             setDisplay(elems.userBar, 'flex');
             loadProfileAndCredits(elems);
         } else {
-            setText(elems.userEmail, '');
+            setText(elems.userStatusPill, '');
+            setDisplay(elems.userStatusPill, 'none');
             currentPlanTier = null;
             chrome.storage.local.set({ plan_tier: null });
             hideCredits(elems, false);
@@ -175,6 +177,7 @@
             aiLock: qs('aiLock'),
             aiUpgradeBtn: qs('aiUpgradeBtn'),
             userEmail: qs('userEmailDisplay'),
+            userStatusPill: qs('userStatusPill'),
             creditsContainer: qs('creditsProgressBarContainer'),
             creditsBar: qs('creditsProgressBar'),
             creditsPct: qs('creditsPercentageDisplay'),

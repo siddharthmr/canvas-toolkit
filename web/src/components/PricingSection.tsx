@@ -1,21 +1,105 @@
 import CheckoutButton from './CheckoutButton';
-import { getProductPriceDetails } from '@/lib/stripeUtils';
+import { getProductPriceDetails, type ProductPriceDetails } from '@/lib/stripeUtils';
 
-const FeatureItem = ({ text, included = true }: { text: string; included?: boolean }) => {
+type PlanFeature = {
+    text: string;
+    included: boolean;
+};
+
+type PlanCardProps = {
+    plan: ProductPriceDetails;
+    description: string;
+    tierLabel: string;
+    sideLabel: string;
+    emphasized?: boolean;
+    features: PlanFeature[];
+};
+
+const FeatureRow = ({ text, included }: PlanFeature) => (
+    <div className="flex items-start gap-2.5">
+        <span
+            className={`mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] leading-none ${
+                included
+                    ? 'border-[#344451]/80 bg-[#131a20] text-[#a8bac6]'
+                    : 'border-[#3d3d3d] text-[#666]'
+            }`}
+        >
+            {included ? '✓' : '×'}
+        </span>
+        <span className={`text-sm leading-6 ${included ? 'text-[#D3D3D3]' : 'text-[#787878]'}`}>{text}</span>
+    </div>
+);
+
+const PlanCard = ({
+    plan,
+    description,
+    tierLabel,
+    sideLabel,
+    emphasized = false,
+    features,
+}: PlanCardProps) => {
+    const cardClass = emphasized
+        ? 'border-[#344451]/70 bg-[#14171a]'
+        : 'border-[#2a2a2a] bg-[#0a0a0a]';
+
+    const dividerClass = emphasized ? 'border-[#344451]/35' : 'border-[#2a2a2a]';
+
     return (
-        <div className="flex items-center mt-3">
-            <div className={`w-5 h-5 ${included ? 'bg-blue-500/40' : 'bg-gray-700/40'} rounded-full flex items-center justify-center mr-3 shrink-0`}>
-                {included ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+        <div className={`rounded-xl border ${cardClass} overflow-hidden flex flex-col min-h-[520px]`}>
+            <div className={`border-b ${dividerClass} px-6 py-5`}>
+                <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${emphasized ? 'bg-[#E5E5E5]' : 'bg-[#E5E5E5]/40'}`} />
+                        <span className="text-[#E5E5E5]/60 text-xs font-medium">{tierLabel}</span>
+                    </div>
+                    <span className={`text-[10px] font-medium tracking-wide uppercase ${emphasized ? 'text-[#E5E5E5]/50' : 'text-[#E5E5E5]/25'}`}>
+                        {sideLabel}
+                    </span>
+                </div>
+
+                <h3 className="text-[#E5E5E5] text-[34px] leading-none font-semibold tracking-[-0.02em]">
+                    {plan.name || (emphasized ? 'AI Integration' : 'Stealth Mode')}
+                </h3>
+                <p className="text-[#A2A2A2] text-[15px] mt-3">{description}</p>
+
+                <div className="mt-6 flex items-end gap-1.5">
+                    {plan.error ? (
+                        <span className="text-[15px] text-[#ff8e9a]">{plan.error}</span>
+                    ) : (
+                        <>
+                            <span className="text-[#E5E5E5] text-5xl font-semibold tracking-[-0.03em]">{plan.price}</span>
+                            <span className="text-[#8b8b8b] text-[28px] leading-none pb-1">/month</span>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex-1 px-6 py-5">
+                <div className="space-y-3.5">
+                    {features.map((feature) => (
+                        <FeatureRow key={feature.text} text={feature.text} included={feature.included} />
+                    ))}
+                </div>
+            </div>
+
+            <div className={`border-t ${dividerClass} px-6 py-5 bg-[#111111]/70`}> 
+                {plan.priceId ? (
+                    <div className="flex justify-center">
+                        <CheckoutButton
+                            priceId={plan.priceId}
+                            label={emphasized ? 'Get AI Integration' : 'Get Stealth Mode'}
+                            className="h-11 rounded-lg border border-[#2c353e] bg-[#0f1318] px-4 text-[13px] font-medium tracking-[0.01em] text-[#E5E5E5] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] before:content-['BUY'] before:mr-2 before:inline-flex before:h-6 before:min-w-[38px] before:items-center before:justify-center before:rounded-md before:bg-[#ECECEC] before:px-2 before:text-[11px] before:font-semibold before:tracking-wide before:text-[#111] after:content-['→'] after:ml-2 after:text-[16px] after:leading-none after:text-[#E5E5E5]/85 hover:border-[#344451] hover:bg-[#141a22]"
+                        />
+                    </div>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
+                    <button
+                        disabled
+                        className="w-full rounded-full border border-[#2f3640] bg-[#15181c] py-2.5 px-4 text-[12px] font-semibold text-[#6f7980] cursor-not-allowed"
+                    >
+                        Currently Unavailable
+                    </button>
                 )}
             </div>
-            <span className={`text-sm ${included ? 'text-gray-300' : 'text-gray-600'}`}>{text}</span>
         </div>
     );
 };
@@ -26,99 +110,54 @@ const AI_PRODUCT_ID = 'prod_TzgEPgGosGk6DQ';
 const PricingSection = async () => {
     const [stealth, ai] = await Promise.all([
         getProductPriceDetails(STEALTH_PRODUCT_ID),
-        getProductPriceDetails(AI_PRODUCT_ID)
+        getProductPriceDetails(AI_PRODUCT_ID),
     ]);
 
     return (
         <section className="relative py-24 w-full overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-gray-500/20 to-transparent" />
-
-            <div className="w-full px-4 text-center">
-                <div className="max-w-7xl mx-auto flex flex-col items-center justify-center">
-                    <h1 className="text-5xl bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent mb-8 py-1 title">Unlock Premium Features</h1>
-
-                    <p className="text-center mb-12 max-w-2xl mx-auto subtitle">Choose the plan that fits your needs. Upgrade anytime.</p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
-                        {/* Stealth Mode Card */}
-                        <div className="bg-black/30 backdrop-blur-md rounded-lg border border-[rgb(35,35,35)] flex flex-col overflow-hidden">
-                            <div className="p-8 flex-1 text-left bg-[rgb(15,15,15)]">
-                                <h2 className="text-2xl font-bold text-[rgb(220,220,220)] mb-2">{stealth.name || 'Stealth Mode'}</h2>
-                                <p className="text-gray-500 text-sm mb-6">Stay undetected during quizzes</p>
-
-                                <div className="flex items-end mb-6">
-                                    {stealth.error ? (
-                                        <span className="text-xl font-bold text-red-400">{stealth.error}</span>
-                                    ) : (
-                                        <>
-                                            <span className="text-4xl font-bold text-[rgb(220,220,220)]">{stealth.price}</span>
-                                            <span className="text-gray-400 ml-1 mb-1">/month</span>
-                                        </>
-                                    )}
-                                </div>
-
-                                <div className="mt-4">
-                                    <FeatureItem text="Disable tab switch detection" />
-                                    <FeatureItem text="Stealth mode for proctored environments" />
-                                    <FeatureItem text="AI quiz answering" included={false} />
-                                    <FeatureItem text="Access to AI models" included={false} />
-                                </div>
-                            </div>
-
-                            <div className="p-6 border-t border-[rgb(35,35,35)] bg-[rgb(12,12,12)]">
-                                {stealth.priceId ? (
-                                    <CheckoutButton priceId={stealth.priceId} />
-                                ) : (
-                                    <button disabled className="w-full bg-gray-500 text-white py-3 px-4 rounded-lg font-medium opacity-50 cursor-not-allowed">
-                                        Currently Unavailable
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* AI Integration Card */}
-                        <div className="bg-black/30 backdrop-blur-md rounded-lg border border-blue-500/30 flex flex-col overflow-hidden relative">
-                            <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                                RECOMMENDED
-                            </div>
-
-                            <div className="p-8 flex-1 text-left bg-[rgb(15,15,15)]">
-                                <h2 className="text-2xl font-bold text-[rgb(220,220,220)] mb-2">{ai.name || 'AI Integration'}</h2>
-                                <p className="text-gray-500 text-sm mb-6">Full AI-powered toolkit experience</p>
-
-                                <div className="flex items-end mb-6">
-                                    {ai.error ? (
-                                        <span className="text-xl font-bold text-red-400">{ai.error}</span>
-                                    ) : (
-                                        <>
-                                            <span className="text-4xl font-bold text-[rgb(220,220,220)]">{ai.price}</span>
-                                            <span className="text-gray-400 ml-1 mb-1">/month</span>
-                                        </>
-                                    )}
-                                </div>
-
-                                <div className="mt-4">
-                                    <FeatureItem text="Disable tab switch detection" />
-                                    <FeatureItem text="Stealth mode for proctored environments" />
-                                    <FeatureItem text="AI-powered real-time quiz answering" />
-                                    <FeatureItem text="Access to all AI models (GPT-4o, Gemini, etc.)" />
-                                    <FeatureItem text="Priority support via Discord" />
-                                </div>
-                            </div>
-
-                            <div className="p-6 border-t border-blue-500/20 bg-[rgb(12,12,12)]">
-                                {ai.priceId ? (
-                                    <CheckoutButton priceId={ai.priceId} />
-                                ) : (
-                                    <button disabled className="w-full bg-gray-500 text-white py-3 px-4 rounded-lg font-medium opacity-50 cursor-not-allowed">
-                                        Currently Unavailable
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+            <div className="w-full px-4">
+                <div className="max-w-5xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-[#E5E5E5] text-4xl md:text-5xl font-extrabold tracking-[-0.03em] leading-tight">
+                            Unlock Premium Features
+                        </h2>
+                        <p className="text-[#E5E5E5]/40 text-sm md:text-[15px] leading-relaxed mt-4 max-w-2xl mx-auto">
+                            Choose the plan that matches your workflow and upgrade any time.
+                        </p>
                     </div>
 
-                    <div className="mt-8 text-xs text-gray-500">Cancel anytime. No hidden fees. All prices in USD.</div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <PlanCard
+                            plan={stealth}
+                            tierLabel="Stealth Tier"
+                            sideLabel="Focused"
+                            description="Stay undetected in proctored quizzes with stealth-only tools."
+                            features={[
+                                { text: 'Disable tab switch detection', included: true },
+                                { text: 'Stealth mode for proctored environments', included: true },
+                                { text: 'AI-powered real-time quiz answering', included: false },
+                                { text: 'Access to all AI models', included: false },
+                            ]}
+                        />
+
+                        <PlanCard
+                            plan={ai}
+                            tierLabel="Complete Tier"
+                            sideLabel="Recommended"
+                            emphasized
+                            description="Full toolkit access with stealth + live AI assistance."
+                            features={[
+                                { text: 'Disable tab switch detection', included: true },
+                                { text: 'Stealth mode for proctored environments', included: true },
+                                { text: 'AI-powered real-time quiz answering', included: true },
+                                { text: 'Access to all AI models (GPT, Gemini, etc.)', included: true },
+                            ]}
+                        />
+                    </div>
+
+                    <p className="mt-8 text-center text-[11px] text-[#E5E5E5]/30">
+                        Cancel anytime. No hidden fees. All prices in USD.
+                    </p>
                 </div>
             </div>
         </section>

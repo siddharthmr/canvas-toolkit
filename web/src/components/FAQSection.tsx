@@ -2,71 +2,99 @@
 
 import { useState } from 'react';
 
-interface FAQItemProps {
+type FAQItem = {
     question: string;
     answer: string;
-}
-
-const FAQItem = ({ question, answer }: FAQItemProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-        <div className="border-b border-[rgb(35,35,35)]">
-            <button onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center w-full py-5 text-left text-[rgb(220,220,220)] hover:text-gray-300 focus:outline-none">
-                <span className="text-lg font-medium">{question}</span>
-                <svg className={`w-6 h-6 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-            </button>
-            {isOpen && (
-                <div className="pb-5 pr-4 pl-4 text-gray-400 text-left">
-                    <p>{answer}</p>
-                </div>
-            )}
-        </div>
-    );
 };
 
+const faqs: FAQItem[] = [
+    {
+        question: 'What questions does CanvasToolkit support?',
+        answer:
+            'CanvasToolkit currently supports multiple choice questions in Canvas LMS. Support for additional question types is planned.',
+    },
+    {
+        question: 'Is CanvasToolkit free to use?',
+        answer:
+            'AI Integration is the only paid feature. Core stealth and utility features are free and active after installation.',
+    },
+    {
+        question: 'Is CanvasToolkit fully undetected?',
+        answer: 'Yes. If you have specific concerns about your environment, contact support directly.',
+    },
+    {
+        question: 'Is using CanvasToolkit cheating?',
+        answer:
+            'CanvasToolkit is built as an assistance tool. You are responsible for following your school, class, and exam policies.',
+    },
+    {
+        question: 'Do I need an account to use CanvasToolkit?',
+        answer:
+            'An account is required for AI Integration. Non-AI features can be used without creating an account.',
+    },
+];
+
 const FAQSection = () => {
-    const faqs = [
-        {
-            question: 'What questions does CanvasToolkit support?',
-            answer: 'Currently, CanvasToolkit only supports multiple choice questions from Canvas LMS. We are working on expanding support to other question types in the future.'
-        },
-        {
-            question: 'Is CanvasToolkit free to use?',
-            answer: 'AI Integration is the only paid feature. The rest of the features are free to use and are automatically active upon installation.'
-        },
-        {
-            question: 'Is CanvasToolkit fully undetected?',
-            answer: 'Yes. Contact us if you have any concerns.'
-        },
-        {
-            question: 'Is using CanvasToolkit cheating?',
-            answer: 'No, it is not cheating. It is a tool that helps you learn and understand the material better.'
-        },
-        {
-            question: 'Do I need an account to use CanvasToolkit?',
-            answer: 'An account is required to use the AI Integration feature. The rest of the features are free to use and are automatically active upon installation, no account needed.'
-        }
-    ];
+    const [openIndex, setOpenIndex] = useState<number>(0);
 
     return (
         <section className="relative py-24 w-full overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-gray-500/20 to-transparent" />
+            <div className="w-full px-4">
+                <div className="max-w-5xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-[#E5E5E5] text-4xl md:text-5xl font-extrabold tracking-[-0.03em] leading-tight">
+                            Frequently Asked Questions
+                        </h2>
+                        <p className="text-[#E5E5E5]/40 text-sm md:text-[15px] leading-relaxed mt-4 max-w-2xl mx-auto">
+                            Quick answers to common CanvasToolkit questions. If your question is not listed, contact us.
+                        </p>
+                    </div>
 
-            <div className="w-full px-4 text-center">
-                <div className="max-w-3xl mx-auto flex flex-col items-center justify-center">
-                    <h1 className="text-5xl bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent mb-8 py-1 title">Frequently Asked Questions</h1>
+                    <div className="space-y-2">
+                        {faqs.map((faq, index) => {
+                            const isOpen = openIndex === index;
 
-                    <p className="text-center mb-12 max-w-2xl subtitle">Find answers to common questions about CanvasToolkit. If you don't see your question here, feel free to contact us.</p>
+                            return (
+                                <div
+                                    key={faq.question}
+                                    className={`border transition-colors ${
+                                        isOpen
+                                            ? 'rounded-lg border-[#344451]/60 bg-[#13171b]'
+                                            : 'rounded-lg border-[#2a2a2a] bg-[#121212] hover:border-[#344451]/35'
+                                    }`}
+                                >
+                                    <button
+                                        onClick={() => setOpenIndex(isOpen ? -1 : index)}
+                                        aria-expanded={isOpen}
+                                        className="w-full px-4 md:px-5 py-4 text-left flex items-center gap-4"
+                                    >
+                                        <span className="text-[11px] md:text-xs font-mono text-[#E5E5E5]/30 shrink-0">
+                                            {String(index + 1).padStart(2, '0')}
+                                        </span>
+                                        <span className="flex-1 text-[#E5E5E5] text-[18px] md:text-[30px] leading-tight tracking-[-0.02em]">
+                                            {faq.question}
+                                        </span>
+                                        <span
+                                            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-lg transition-all ${
+                                                isOpen
+                                                    ? 'border-[#344451] bg-[#1a232b] text-[#c9d7e1]'
+                                                    : 'border-[#2f2f2f] text-[#7f7f7f]'
+                                            }`}
+                                        >
+                                            {isOpen ? '−' : '+'}
+                                        </span>
+                                    </button>
 
-                    <div className="w-full bg-black/30 backdrop-blur-md rounded-lg p-6 border border-[rgb(35,35,35)]">
-                        <div className="w-full">
-                            {faqs.map((faq, index) => (
-                                <FAQItem key={index} question={faq.question} answer={faq.answer} />
-                            ))}
-                        </div>
+                                    {isOpen && (
+                                        <div className="border-t border-[#344451]/40 px-4 md:px-5 py-4">
+                                            <p className="text-[#C2C2C2] text-sm md:text-[15px] leading-relaxed max-w-4xl pl-6 md:pl-9">
+                                                {faq.answer}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

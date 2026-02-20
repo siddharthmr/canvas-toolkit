@@ -50,24 +50,50 @@ const Navbar = () => {
 
     const showBg = scrolled || mobileOpen;
 
+    const authButton = user ? (
+        <Link
+            href="/account"
+            className="text-[#E5E5E5] bg-[#000] text-[11px] font-mono tracking-[0.04em] font-medium px-3.5 py-1.5 rounded-md border border-[#E5E5E5]/10 hover:bg-[#222] transition-colors duration-200"
+        >
+            Account
+        </Link>
+    ) : (
+        <Link
+            href="/login"
+            className="text-[#E5E5E5] bg-[#000] text-[11px] font-mono tracking-[0.04em] font-medium px-3.5 py-1.5 rounded-md border border-[#E5E5E5]/10 hover:bg-accent/50 transition-colors duration-200"
+        >
+            Login
+        </Link>
+    );
+
     return (
         <nav
-            className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-xl transition-all duration-500 ${
-                showBg
-                    ? 'bg-[#0A0A0A]/70 backdrop-blur-2xl border border-[#E5E5E5]/[0.06] shadow-[0_0_40px_rgba(0,0,0,0.4)]'
-                    : 'border border-transparent'
+            className={`fixed top-6 z-50 transition-all duration-500 ${
+                scrolled
+                    ? 'left-1/2 -translate-x-1/2 rounded-xl bg-[#0A0A0A]/70 backdrop-blur-2xl border border-[#E5E5E5]/[0.06] shadow-[0_0_40px_rgba(0,0,0,0.4)]'
+                    : 'left-0 right-0 translate-x-0 mx-6 rounded-xl border border-transparent'
             }`}
         >
-            <div className="flex items-center gap-6 px-6 py-3">
+            {/* Desktop */}
+            <div
+                className={`hidden md:flex items-center px-6 py-3 transition-all duration-500 ${
+                    scrolled ? 'gap-6 justify-center' : 'justify-between'
+                }`}
+            >
+                {/* Logo — always visible, left when expanded */}
                 <Link
                     href="/"
-                    className="text-[#E5E5E5] text-sm font-bold tracking-[-0.03em] shrink-0 hover:opacity-80 transition-opacity duration-200"
+                    className={`text-[#E5E5E5] text-sm font-bold tracking-[-0.03em] shrink-0 hover:opacity-80 transition-all duration-500 ${
+                        scrolled ? '' : ''
+                    }`}
                 >
                     CanvasToolkit
                 </Link>
 
-                {/* Desktop links */}
-                <div className="hidden md:flex items-center gap-5">
+                {/* Nav links — center when expanded, inline when scrolled */}
+                <div className={`flex items-center gap-5 transition-all duration-500 ${
+                    scrolled ? '' : 'absolute left-1/2 -translate-x-1/2'
+                }`}>
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
@@ -77,28 +103,28 @@ const Navbar = () => {
                             {link.text}
                         </Link>
                     ))}
-                    <div className="w-px h-3.5 bg-[#E5E5E5]/10" />
-                    {user ? (
-                        <Link
-                            href="/account"
-                            className="text-[#E5E5E5] bg-[#000] text-[11px] font-mono tracking-[0.04em] font-medium px-3.5 py-1.5 rounded-md border border-[#E5E5E5]/10 hover:bg-[#222] transition-colors duration-200"
-                        >
-                            Account
-                        </Link>
-                    ) : (
-                        <Link
-                            href="/login"
-                            className="text-[#E5E5E5] bg-[#000] text-[11px] font-mono tracking-[0.04em] font-medium px-3.5 py-1.5 rounded-md border border-[#E5E5E5]/10 hover:bg-[#222] transition-colors duration-200"
-                        >
-                            Login
-                        </Link>
-                    )}
                 </div>
 
-                {/* Mobile toggle */}
+                {/* Divider + Auth — right when expanded, inline when scrolled */}
+                <div className={`flex items-center gap-5 shrink-0 transition-all duration-500 ${
+                    scrolled ? '' : ''
+                }`}>
+                    <div className="w-px h-3.5 bg-[#E5E5E5]/10" />
+                    {authButton}
+                </div>
+            </div>
+
+            {/* Mobile */}
+            <div className="md:hidden flex items-center justify-between px-6 py-3">
+                <Link
+                    href="/"
+                    className="text-[#E5E5E5] text-sm font-bold tracking-[-0.03em] shrink-0 hover:opacity-80 transition-opacity duration-200"
+                >
+                    CanvasToolkit
+                </Link>
                 <button
                     onClick={() => setMobileOpen(!mobileOpen)}
-                    className="md:hidden text-[#E5E5E5]/60 hover:text-[#E5E5E5] transition-colors"
+                    className="text-[#E5E5E5]/60 hover:text-[#E5E5E5] transition-colors"
                     aria-label="Toggle menu"
                 >
                     <svg

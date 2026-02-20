@@ -3,25 +3,25 @@
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import CheckoutButton from '@/components/CheckoutButton';
+import { Skeleton } from '@/components/ui/skeleton';
 
-function formatSubscriptionStatus(status: string | null): string {
-    if (!status) return 'N/A';
+function formatStatus(status: string | null): string {
+    if (!status) return 'Inactive';
     return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
 }
 
-function formatPlanTier(tier: string | null): string {
-    if (!tier) return 'None';
+function formatTier(tier: string | null): string {
+    if (!tier) return 'No plan';
     if (tier === 'stealth') return 'Stealth Mode';
     if (tier === 'ai') return 'AI Integration';
     return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
-interface User {
-    id: string;
-    email?: string;
-}
+interface User { id: string; email?: string }
 
 interface ProfileData {
     credits: number | string;
@@ -34,6 +34,13 @@ interface ProfileData {
 
 const STEALTH_PRODUCT_ID = 'prod_TzgEBiCV7UhyXS';
 const AI_PRODUCT_ID = 'prod_TzgEPgGosGk6DQ';
+
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex items-center justify-between py-3">
+        <span className="text-muted-foreground text-sm">{label}</span>
+        <span className="text-foreground text-sm font-medium tabular-nums">{value}</span>
+    </div>
+);
 
 export default function AccountPage() {
     const supabase = createClient();
@@ -49,8 +56,10 @@ export default function AccountPage() {
 
     const [stealthPriceId, setStealthPriceId] = useState<string | null>(null);
     const [aiPriceId, setAiPriceId] = useState<string | null>(null);
-    const [isPriceLoading, setIsPriceLoading] = useState<boolean>(false);
+    const [isPriceLoading, setIsPriceLoading] = useState(false);
     const [priceFetchError, setPriceFetchError] = useState<string | null>(null);
+    const priceFetchInitiated = useRef(false);
+    const aiPriceFetchInitiated = useRef(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -58,48 +67,35 @@ export default function AccountPage() {
             const { data: userData, error: userError } = await supabase.auth.getUser();
 
             if (userError || !userData?.user) {
-                console.log('User not authenticated, redirecting to login.');
                 router.push('/login');
                 return;
             }
 
             setUser(userData.user);
-            const userId = userData.user.id;
 
-            const { data: fetchedProfileData, error: profileError } = await supabase
+            const { data: fetchedProfile, error: profileError } = await supabase
                 .from('profiles')
-                .select(
-                    `
-                    credits,
-                    subscription_status,
-                    current_period_end,
-                    stripe_customer_id,
-                    stripe_subscription_id,
-                    plan_tier
-                `
-                )
-                .eq('id', userId)
+                .select('credits, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id, plan_tier')
+                .eq('id', userData.user.id)
                 .single();
 
             if (profileError) {
                 if (profileError.code === 'PGRST116') {
-                    console.warn(`Profile not found for user ${userId}. Displaying basic info.`);
-                    setProfileData({ credits: 'N/A', subscription_status: null, current_period_end: null, stripe_customer_id: 'Not linked', stripe_subscription_id: 'None', plan_tier: null });
+                    setProfileData({ credits: 'N/A', subscription_status: null, current_period_end: null, stripe_customer_id: null, stripe_subscription_id: null, plan_tier: null });
                 } else {
-                    console.error('Error fetching user profile:', profileError);
                     setError('Error loading account details.');
                 }
             } else {
-                setProfileData(fetchedProfileData);
+                setProfileData(fetchedProfile);
             }
             setLoading(false);
         };
-
         fetchData();
     }, [supabase, router]);
 
     useEffect(() => {
-        if (profileData && profileData.subscription_status !== 'active' && !isPriceLoading) {
+        if (profileData && profileData.subscription_status !== 'active' && !priceFetchInitiated.current) {
+            priceFetchInitiated.current = true;
             const fetchPrices = async () => {
                 setIsPriceLoading(true);
                 setPriceFetchError(null);
@@ -108,14 +104,13 @@ export default function AccountPage() {
                         fetch(`/api/product-info?productId=${STEALTH_PRODUCT_ID}`),
                         fetch(`/api/product-info?productId=${AI_PRODUCT_ID}`)
                     ]);
-
                     if (stealthRes.ok) {
-                        const data = await stealthRes.json();
-                        if (data.priceId) setStealthPriceId(data.priceId);
+                        const d = await stealthRes.json();
+                        if (d.priceId) setStealthPriceId(d.priceId);
                     }
                     if (aiRes.ok) {
-                        const data = await aiRes.json();
-                        if (data.priceId) setAiPriceId(data.priceId);
+                        const d = await aiRes.json();
+                        if (d.priceId) setAiPriceId(d.priceId);
                     }
                 } catch (err: any) {
                     console.error('Error fetching prices:', err);
@@ -123,28 +118,27 @@ export default function AccountPage() {
                 }
                 setIsPriceLoading(false);
             };
-
             fetchPrices();
         }
 
-        if (profileData?.plan_tier === 'stealth' && profileData.subscription_status === 'active' && !aiPriceId && !isPriceLoading) {
+        if (profileData?.plan_tier === 'stealth' && profileData.subscription_status === 'active' && !aiPriceFetchInitiated.current) {
+            aiPriceFetchInitiated.current = true;
             const fetchAiPrice = async () => {
                 setIsPriceLoading(true);
                 try {
                     const res = await fetch(`/api/product-info?productId=${AI_PRODUCT_ID}`);
                     if (res.ok) {
-                        const data = await res.json();
-                        if (data.priceId) setAiPriceId(data.priceId);
+                        const d = await res.json();
+                        if (d.priceId) setAiPriceId(d.priceId);
                     }
                 } catch (err: any) {
                     console.error('Error fetching AI price:', err);
                 }
                 setIsPriceLoading(false);
             };
-
             fetchAiPrice();
         }
-    }, [profileData, isPriceLoading, aiPriceId]);
+    }, [profileData]);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -158,49 +152,32 @@ export default function AccountPage() {
         try {
             const response = await fetch('/api/customer-portal', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
-
             const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to create portal session.');
-            }
-
+            if (!response.ok) throw new Error(data.error || 'Failed to create portal session.');
             if (data.url) {
                 window.location.href = data.url;
             } else {
-                throw new Error('Portal URL not found in response.');
+                throw new Error('Portal URL not found.');
             }
         } catch (err: any) {
-            console.error('Error creating customer portal session:', err);
-            setPortalError(err.message || 'Could not open the billing portal. Please try again.');
+            setPortalError(err.message || 'Could not open billing portal.');
         }
         setIsPortalLoading(false);
     };
 
-    if (loading) {
-        return (
-            <div className="container mx-auto px-4 py-8 mt-20 flex justify-center items-center min-h-[calc(100vh-5rem)]">
-                <p className="text-xl text-gray-400">Loading account details...</p>
-            </div>
-        );
-    }
-
     if (error) {
         return (
-            <div className="container mx-auto px-4 py-8 mt-20 flex justify-center items-center min-h-[calc(100vh-5rem)]">
-                <p className="text-xl text-red-400">{error}</p>
+            <div className="flex items-center justify-center h-[calc(100vh-5rem)]">
+                <p className="text-red-400 text-sm">{error}</p>
             </div>
         );
     }
-
-    if (!user) {
+    if (!loading && !user) {
         return (
-            <div className="container mx-auto px-4 py-8 mt-20 flex justify-center items-center min-h-[calc(100vh-5rem)]">
-                <p className="text-xl text-gray-400">Redirecting to login...</p>
+            <div className="flex items-center justify-center h-[calc(100vh-5rem)]">
+                <p className="text-muted-foreground text-sm font-mono">Redirecting...</p>
             </div>
         );
     }
@@ -209,118 +186,161 @@ export default function AccountPage() {
     const isAiPlan = profileData?.plan_tier === 'ai';
     const isStealthPlan = profileData?.plan_tier === 'stealth';
 
-    const creditsRaw = profileData?.credits;
-    let creditsDisplay: string;
-    if (isAiPlan && typeof creditsRaw === 'number' && !isNaN(creditsRaw)) {
-        const percentage = (creditsRaw / 2.5) * 100;
-        creditsDisplay = `${percentage.toFixed(2)}%`;
-    } else {
-        creditsDisplay = 'N/A';
+    let creditsDisplay = 'N/A';
+    if (isAiPlan && typeof profileData?.credits === 'number') {
+        creditsDisplay = `${((profileData.credits / 2.5) * 100).toFixed(0)}%`;
     }
 
-    const status = formatSubscriptionStatus(profileData?.subscription_status ?? null);
-    const tierDisplay = formatPlanTier(profileData?.plan_tier ?? null);
-    const periodEnd = profileData?.current_period_end ? format(new Date(profileData.current_period_end), 'PPP') : 'N/A';
-    const customerId = profileData?.stripe_customer_id ?? 'Not linked';
-    const subscriptionId = profileData?.stripe_subscription_id ?? 'None';
+    const periodEnd = profileData?.current_period_end
+        ? format(new Date(profileData.current_period_end), 'MMM d, yyyy')
+        : 'N/A';
 
     return (
-        <div className="w-full px-6 py-8 flex flex-col items-center text-[rgb(220,220,220)] min-h-[calc(100vh-5rem)]">
-            <div className="bg-black/30 backdrop-blur-md rounded-lg p-8 border border-[rgb(35,35,35)] shadow-xl w-full max-w-2xl">
-                <h2 className="text-2xl font-semibold mb-6 text-gray-100">Account Information</h2>
-                <dl className="space-y-4">
-                    <div>
-                        <dt className="font-medium text-gray-400">Email:</dt>
-                        <dd className="text-gray-200">{user.email}</dd>
-                    </div>
-                    {profileData && (
-                        <>
-                            <div>
-                                <dt className="font-medium text-gray-400">Current Plan:</dt>
-                                <dd className="text-gray-200">{tierDisplay}</dd>
-                            </div>
-                            <div>
-                                <dt className="font-medium text-gray-400">Subscription Status:</dt>
-                                <dd className="text-gray-200">{status}</dd>
-                            </div>
-
-                            {isAiPlan && isActive && (
-                                <div>
-                                    <dt className="font-medium text-gray-400">Monthly Credit Level Remaining:</dt>
-                                    <dd className="text-gray-200 tabular-nums">{creditsDisplay}</dd>
-                                </div>
-                            )}
-
-                            {/* No subscription — show both plans */}
-                            {!isActive && (
-                                <div className="mt-6 p-4 border border-dashed border-yellow-600 rounded-lg bg-yellow-500/10">
-                                    <h3 className="text-lg font-semibold text-yellow-200 mb-2">Subscription Inactive</h3>
-                                    <p className="text-yellow-300 mb-4">Your subscription is not currently active. Choose a plan to unlock premium features.</p>
-                                    {isPriceLoading && <p className="text-gray-400 animate-pulse">Loading subscription options...</p>}
-                                    {priceFetchError && <p className="text-red-400">Error: {priceFetchError}</p>}
-                                    {!isPriceLoading && !priceFetchError && (
-                                        <div className="space-y-3">
-                                            {stealthPriceId && (
-                                                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-[rgb(35,35,35)]">
-                                                    <div>
-                                                        <p className="text-gray-200 font-medium">Stealth Mode</p>
-                                                        <p className="text-gray-500 text-sm">$7.99/mo — Tab switch detection disabled</p>
-                                                    </div>
-                                                    <CheckoutButton priceId={stealthPriceId} />
-                                                </div>
-                                            )}
-                                            {aiPriceId && (
-                                                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-blue-500/20">
-                                                    <div>
-                                                        <p className="text-gray-200 font-medium">AI Integration</p>
-                                                        <p className="text-gray-500 text-sm">$10.99/mo — Stealth + AI answering</p>
-                                                    </div>
-                                                    <CheckoutButton priceId={aiPriceId} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Stealth plan active — show upgrade to AI */}
-                            {isStealthPlan && isActive && (
-                                <div className="mt-6 p-4 border border-dashed border-blue-600 rounded-lg bg-blue-500/10">
-                                    <h3 className="text-lg font-semibold text-blue-200 mb-2">Upgrade to AI Integration</h3>
-                                    <p className="text-blue-300 mb-3">Get AI-powered quiz answering on top of your stealth features for $10.99/mo.</p>
-                                    {aiPriceId && (
-                                        <CheckoutButton priceId={aiPriceId} />
-                                    )}
-                                </div>
-                            )}
-
-                            {isActive && (
-                                <div>
-                                    <dt className="font-medium text-gray-400">Current Period End / Renewal Date:</dt>
-                                    <dd className="text-gray-200 tabular-nums">{periodEnd}</dd>
-                                </div>
-                            )}
-                            <div>
-                                <dt className="font-medium text-gray-400">Stripe Customer ID:</dt>
-                                <dd className="text-gray-300 text-sm break-all">{customerId}</dd>
-                            </div>
-                            <div>
-                                <dt className="font-medium text-gray-400">Stripe Subscription ID:</dt>
-                                <dd className="text-gray-300 text-sm break-all">{subscriptionId}</dd>
-                            </div>
-                        </>
+        <div className="flex justify-center px-6 py-12">
+            <div className="w-full max-w-lg rounded-xl border border-border p-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-foreground text-xl font-bold tracking-[-0.03em]">Account</h1>
+                    {loading ? (
+                        <Skeleton className="h-3 w-40 mt-2" />
+                    ) : (
+                        <p className="text-muted-foreground text-xs font-mono tracking-wide mt-1">{user?.email}</p>
                     )}
-                    {profileData?.credits === 'N/A' && <p className="text-yellow-400 mt-4 text-sm">Profile details not found. If you recently signed up, they might still be syncing. Please contact support if this persists.</p>}
-                </dl>
-                {profileData?.stripe_customer_id && profileData.stripe_customer_id !== 'Not linked' && (
-                    <button type="button" onClick={handleManageSubscription} disabled={isPortalLoading} className="mt-8 w-full inline-flex justify-center items-center px-4 py-2.5 border-none text-sm font-bold rounded-lg shadow-sm text-[rgba(35,35,35)] bg-[rgba(220,220,220)] hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(120,150,255)] transition-colors duration-150 disabled:opacity-70">
-                        {isPortalLoading ? 'Loading Portal...' : 'Manage Billing & Subscription'}
-                    </button>
+                </div>
+
+                {loading ? (
+                    <>
+                        {/* Skeleton plan info rows */}
+                        <div>
+                            <div className="flex items-center justify-between py-3">
+                                <Skeleton className="h-4 w-16" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Separator className="bg-border" />
+                            <div className="flex items-center justify-between py-3">
+                                <Skeleton className="h-4 w-16" />
+                                <Skeleton className="h-4 w-16" />
+                            </div>
+                            <Separator className="bg-border" />
+                            <div className="flex items-center justify-between py-3">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                        </div>
+
+                        {/* Skeleton actions */}
+                        <div className="mt-8 space-y-3">
+                            <Skeleton className="h-10 w-full rounded-lg" />
+                            <Skeleton className="h-10 w-full rounded-lg" />
+                        </div>
+                    </>
+                ) : profileData && (
+                    <>
+                        {/* Plan info rows */}
+                        <div>
+                            <InfoRow label="Plan" value={formatTier(profileData.plan_tier)} />
+                            <Separator className="bg-border" />
+                            <InfoRow label="Status" value={formatStatus(profileData.subscription_status)} />
+                            {isAiPlan && isActive && (
+                                <>
+                                    <Separator className="bg-border" />
+                                    <InfoRow label="Credits remaining" value={creditsDisplay} />
+                                </>
+                            )}
+                            {isActive && (
+                                <>
+                                    <Separator className="bg-border" />
+                                    <InfoRow label="Renews" value={periodEnd} />
+                                </>
+                            )}
+                        </div>
+
+                        {/* Inactive — show plans */}
+                        {!isActive && (
+                            <div className="mt-8">
+                                <p className="text-muted-foreground text-xs font-mono tracking-wide mb-4">Choose a plan</p>
+                                {isPriceLoading && (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-4 w-24" />
+                                                <Skeleton className="h-3 w-16" />
+                                            </div>
+                                            <Skeleton className="h-8 w-20 rounded-md" />
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-4 w-28" />
+                                                <Skeleton className="h-3 w-16" />
+                                            </div>
+                                            <Skeleton className="h-8 w-20 rounded-md" />
+                                        </div>
+                                    </div>
+                                )}
+                                {priceFetchError && (
+                                    <p className="text-red-400 text-xs">{priceFetchError}</p>
+                                )}
+                                {!isPriceLoading && !priceFetchError && (
+                                    <div className="space-y-3">
+                                        {stealthPriceId && (
+                                            <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+                                                <div>
+                                                    <p className="text-foreground text-sm font-medium">Stealth Mode</p>
+                                                    <p className="text-muted-foreground text-xs mt-0.5">$7.99/mo</p>
+                                                </div>
+                                                <CheckoutButton priceId={stealthPriceId} />
+                                            </div>
+                                        )}
+                                        {aiPriceId && (
+                                            <div className="flex items-center justify-between p-4 rounded-lg border border-foreground/10 bg-foreground/[0.03]">
+                                                <div>
+                                                    <p className="text-foreground text-sm font-medium">AI Integration</p>
+                                                    <p className="text-muted-foreground text-xs mt-0.5">$10.99/mo</p>
+                                                </div>
+                                                <CheckoutButton priceId={aiPriceId} />
+                                            </div>
+                                        )}
+                                        {!stealthPriceId && !aiPriceId && (
+                                            <p className="text-muted-foreground text-xs">No plans available. Check Stripe product configuration.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Stealth active — upgrade */}
+                        {isStealthPlan && isActive && aiPriceId && (
+                            <div className="mt-8 flex items-center justify-between p-4 rounded-lg border border-foreground/10 bg-foreground/[0.03]">
+                                <div>
+                                    <p className="text-foreground text-sm font-medium">Upgrade to AI Integration</p>
+                                    <p className="text-muted-foreground text-xs mt-0.5">$10.99/mo</p>
+                                </div>
+                                <CheckoutButton priceId={aiPriceId} label="Upgrade" />
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="mt-8 space-y-3">
+                            {profileData.stripe_customer_id && (
+                                <Button
+                                    onClick={handleManageSubscription}
+                                    disabled={isPortalLoading}
+                                    className="w-full h-10 rounded-lg bg-foreground text-background hover:bg-foreground/90 text-sm font-medium cursor-pointer transition-colors duration-200"
+                                >
+                                    {isPortalLoading ? 'Loading...' : 'Manage billing'}
+                                </Button>
+                            )}
+                            {portalError && <p className="text-red-400 text-xs text-center">{portalError}</p>}
+                            <Button
+                                onClick={handleSignOut}
+                                variant="ghost"
+                                className="w-full h-10 rounded-lg text-muted-foreground hover:text-foreground text-sm font-medium cursor-pointer"
+                            >
+                                Sign out
+                            </Button>
+                        </div>
+                    </>
                 )}
-                {portalError && <p className="text-red-400 text-sm mt-2 text-center">{portalError}</p>}
-                <button type="button" onClick={handleSignOut} className="mt-4 w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-[rgba(205,74,59,0.8)] hover:bg-[rgba(205,74,59,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(205,74,59,0.5)] transition-colors duration-150">
-                    Sign Out
-                </button>
             </div>
         </div>
     );

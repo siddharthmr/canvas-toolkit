@@ -189,7 +189,7 @@ const QuestionCard = ({
     return (
         <div className="flex w-full" style={{ background: '#161616' }}>
             <CanvasSidebar />
-            <div className="flex-1 min-w-0 px-5 pt-5 pb-3 flex justify-center">
+            <div className="flex-1 min-w-0 px-5 pt-5 pb-3 flex items-start justify-center">
                 <div className="border border-[#2a2a2a] overflow-hidden w-full max-w-[55%]">
                     <div
                         className="flex items-center justify-between px-4 py-2.5 border-b border-[#2a2a2a]"
