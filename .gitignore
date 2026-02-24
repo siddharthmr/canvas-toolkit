@@ -40,6 +40,10 @@ web/prettier.config.js
 web/eslint.config.js
 web/eslint.config.mjs
 
+# Cloudflare Workers
+cloudflare/*/node_modules/
+cloudflare/*/.wrangler/
+
 # Extension
 extension/.env*
 extension/.DS_Store

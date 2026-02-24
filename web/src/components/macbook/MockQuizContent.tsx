@@ -5,6 +5,7 @@ import {
     ReactCompareSlider,
     ReactCompareSliderHandle,
 } from 'react-compare-slider';
+import { ModelData } from '@/lib/getModels';
 
 const options = [
     { label: '0.55 L', value: 'a' },
@@ -157,10 +158,14 @@ const QuestionCard = ({
     selected,
     onSelect,
     showButtons,
+    primaryName,
+    secondaryName,
 }: {
     selected: string | null;
     onSelect: (v: string) => void;
     showButtons: 'visible' | 'hidden';
+    primaryName: string;
+    secondaryName: string;
 }) => {
     const [loadingBtn, setLoadingBtn] = useState<string | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -202,38 +207,42 @@ const QuestionCard = ({
                             {showButtons === 'visible' ? (
                                 <button
                                     onPointerDown={stopSlider}
-                                    onClick={(e) => handleAiClick(e, 'gemini')}
+                                    onClick={(e) => handleAiClick(e, 'primary')}
                                     disabled={loadingBtn !== null}
-                                    className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 min-w-[90px] justify-center"
+                                    className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 justify-center"
                                 >
-                                    {loadingBtn === 'gemini' ? <Spinner /> : 'Gemini 3 Pro'}
+                                    {loadingBtn === 'primary' ? <Spinner /> : primaryName}
                                 </button>
                             ) : (
                                 <button
                                     onPointerDown={stopSlider}
-                                    onClick={(e) => handleAiClick(e, 'gemini')}
+                                    onClick={(e) => handleAiClick(e, 'primary')}
                                     disabled={loadingBtn !== null}
-                                    className="px-2.5 py-1 rounded border-2 border-dashed border-red-500/60 min-w-[72px] h-[26px] cursor-pointer hover:border-red-500/80 transition-colors"
-                                />
+                                    className="px-2.5 py-1 text-[11px] font-medium rounded border-2 border-dashed border-red-500/60 cursor-pointer hover:border-red-500/80 transition-colors inline-flex items-center justify-center"
+                                >
+                                    <span className="invisible">{primaryName}</span>
+                                </button>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                             {showButtons === 'visible' ? (
                                 <button
                                     onPointerDown={stopSlider}
-                                    onClick={(e) => handleAiClick(e, 'gpt')}
+                                    onClick={(e) => handleAiClick(e, 'secondary')}
                                     disabled={loadingBtn !== null}
-                                    className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 min-w-[62px] justify-center"
+                                    className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 justify-center"
                                 >
-                                    {loadingBtn === 'gpt' ? <Spinner /> : 'GPT 5.2'}
+                                    {loadingBtn === 'secondary' ? <Spinner /> : secondaryName}
                                 </button>
                             ) : (
                                 <button
                                     onPointerDown={stopSlider}
-                                    onClick={(e) => handleAiClick(e, 'gpt')}
+                                    onClick={(e) => handleAiClick(e, 'secondary')}
                                     disabled={loadingBtn !== null}
-                                    className="px-2.5 py-1 rounded border-2 border-dashed border-red-500/60 min-w-[52px] h-[26px] cursor-pointer hover:border-red-500/80 transition-colors"
-                                />
+                                    className="px-2.5 py-1 text-[11px] font-medium rounded border-2 border-dashed border-red-500/60 cursor-pointer hover:border-red-500/80 transition-colors inline-flex items-center justify-center"
+                                >
+                                    <span className="invisible">{secondaryName}</span>
+                                </button>
                             )}
                             <span className="text-[#E0E0E0] text-[13px] font-medium whitespace-nowrap">
                                 1 pts
@@ -270,7 +279,7 @@ const QuestionCard = ({
     );
 };
 
-const MockQuizContent = () => {
+const MockQuizContent = ({ models }: { models: ModelData }) => {
     const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = useCallback((value: string) => {
@@ -302,6 +311,8 @@ const MockQuizContent = () => {
                         selected={selected}
                         onSelect={handleSelect}
                         showButtons="visible"
+                        primaryName={models.defaultPrimary}
+                        secondaryName={models.defaultSecondary}
                     />
                 }
                 itemTwo={
@@ -309,6 +320,8 @@ const MockQuizContent = () => {
                         selected={selected}
                         onSelect={handleSelect}
                         showButtons="hidden"
+                        primaryName={models.defaultPrimary}
+                        secondaryName={models.defaultSecondary}
                     />
                 }
                 position={50}

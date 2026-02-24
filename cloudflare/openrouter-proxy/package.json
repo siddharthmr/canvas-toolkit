@@ -1,0 +1,16 @@
+{
+  "name": "openrouter-proxy-worker",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2"
+  },
+  "devDependencies": {
+    "wrangler": "^3"
+  }
+}

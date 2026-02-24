@@ -21,11 +21,7 @@
     <!-- User bar (visible when logged in) -->
     <div id="userBar" class="user-bar" style="display:none;">
         <div class="user-bar-left">
-            <div id="creditsProgressBarContainer" class="progress-container" style="display:none;">
-                <div id="creditsProgressBar" class="progress-fill"></div>
-                <span id="creditsPercentageDisplay" class="progress-label"></span>
-            </div>
-            <span id="userStatusPill" class="user-status-pill" style="display:none;"></span>
+            <span id="userGreeting" class="user-greeting"></span>
         </div>
         <div class="user-bar-right">
             <button id="manageButton" class="btn-text">Manage</button>
@@ -57,27 +53,30 @@
     <div id="aiSection" class="section">
         <div id="aiContent" class="section-content">
             <div class="section-header">
-                <span class="section-title">AI Features</span>
+                <span class="stealth-row-label">AI Features</span>
+                <div class="section-header-right">
+                    <span id="updateStatus" class="update-status"></span>
+                    <button id="checkUpdatesButton" class="btn-text">Update Models</button>
+                </div>
             </div>
             <div class="section-divider"></div>
+            <div class="model-row" id="creditsProgressBarContainer" style="display:none;">
+                <label>AI Credit</label>
+                <div class="credits-bar-wrapper">
+                    <div id="creditsProgressBar" class="credits-bar-fill"></div>
+                </div>
+                <span id="creditsPercentageDisplay" class="credits-bar-label"></span>
+            </div>
             <div class="model-row">
                 <label for="primaryModel">Primary</label>
                 <select name="primaryModel" id="primaryModel">
-                    <option value="deepseek/deepseek-r1">DeepSeek R1</option>
-                    <option value="deepseek/deepseek-chat">DeepSeek V3</option>
-                    <option value="openai/gpt-4o">GPT-4o</option>
-                    <option value="openai/o4-mini">o4 mini</option>
-                    <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
+                    <!-- Populated dynamically from cached model config -->
                 </select>
             </div>
             <div class="model-row">
                 <label for="secondaryModel">Secondary</label>
                 <select name="secondaryModel" id="secondaryModel">
-                    <option value="deepseek/deepseek-r1">DeepSeek R1</option>
-                    <option value="deepseek/deepseek-chat">DeepSeek V3</option>
-                    <option value="openai/gpt-4o">GPT-4o</option>
-                    <option value="openai/o4-mini">o4 mini</option>
-                    <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
+                    <!-- Populated dynamically from cached model config -->
                 </select>
             </div>
             <div class="section-divider"></div>

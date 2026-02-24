@@ -1,3 +1,10 @@
+importScripts('/src/lib/supabase.js');
+
+const SUPABASE_URL = 'https://hxpqkysrjeofpburzqwu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cHFreXNyamVvZnBidXJ6cXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyOTg5MzMsImV4cCI6MjA4Njg3NDkzM30.EETUQhkrH-dxs03cKawD1LQ83yTu_kVJCSt5bt-Pgkw';
+
+const sbClient = self.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const CONTEXT_MENU_ID = 'CANVAS_TOOLKIT_ADD_IMAGE_DATA';
 const STORAGE_KEY = 'promptImageDataUrl';
 const SHIV_SCRIPT_ID = 'listener-shiv';
@@ -13,7 +20,7 @@ function blobToBase64(blob) {
     });
 }
 
-async function syncTabDetection() {
+async function syncTabDetection(liveInject = false) {
     try {
         const local = await chrome.storage.local.get(['plan_tier']);
         const sync = await chrome.storage.sync.get(['tabDetectionEnabled']);
@@ -34,6 +41,20 @@ async function syncTabDetection() {
             }]);
         } else if (!shouldInject && registered.length > 0) {
             await chrome.scripting.unregisterContentScripts({ ids: [SHIV_SCRIPT_ID] });
+        }
+
+        // Live-inject into already-open Canvas tabs when toggled on
+        if (shouldInject && liveInject) {
+            const tabs = await chrome.tabs.query({ url: '*://*.instructure.com/*' });
+            for (const tab of tabs) {
+                try {
+                    await chrome.scripting.executeScript({
+                        target: { tabId: tab.id, allFrames: true },
+                        files: ['src/content/listenerShiv.js'],
+                        world: 'MAIN',
+                    });
+                } catch { /* tab may not be accessible */ }
+            }
         }
     } catch (err) {
         console.error('syncTabDetection error:', err);
@@ -98,8 +119,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'googleSignIn') {
-        const SUPABASE_URL = 'https://hxpqkysrjeofpburzqwu.supabase.co';
-
         (async () => {
             try {
                 const redirectUrl = chrome.identity.getRedirectURL();
@@ -127,9 +146,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     throw new Error('No tokens returned from Google sign-in.');
                 }
 
-                chrome.storage.local.set({
-                    supabase_session: { access_token, refresh_token }
-                });
+                // Set session on background Supabase client so it can refresh later
+                const { data } = await sbClient.auth.setSession({ access_token, refresh_token });
+                const session = data?.session || { access_token, refresh_token };
+                chrome.storage.local.set({ supabase_session: session });
 
                 sendResponse({ success: true, access_token, refresh_token });
             } catch (err) {
@@ -143,8 +163,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    if (message.type === 'getFreshToken') {
+        (async () => {
+            try {
+                // Try to get a live session first
+                const { data: { session } } = await sbClient.auth.getSession();
+                if (session && session.expires_at * 1000 > Date.now() + 60000) {
+                    // Token is still valid (with 60s buffer)
+                    chrome.storage.local.set({ supabase_session: session });
+                    sendResponse({ success: true, access_token: session.access_token });
+                    return;
+                }
+
+                // No valid session — try restoring from storage and refreshing
+                const stored = await chrome.storage.local.get('supabase_session');
+                if (stored.supabase_session?.refresh_token) {
+                    const { data, error } = await sbClient.auth.setSession({
+                        access_token: stored.supabase_session.access_token,
+                        refresh_token: stored.supabase_session.refresh_token,
+                    });
+                    if (error) throw error;
+                    if (data.session) {
+                        chrome.storage.local.set({ supabase_session: data.session });
+                        sendResponse({ success: true, access_token: data.session.access_token });
+                        return;
+                    }
+                }
+
+                sendResponse({ success: false, error: 'No session available' });
+            } catch (err) {
+                console.error('getFreshToken error:', err);
+                sendResponse({ success: false, error: err.message });
+            }
+        })();
+        return true;
+    }
+
     if (message.type === 'syncTabDetection') {
-        syncTabDetection();
+        syncTabDetection(true);
         return false;
     }
 

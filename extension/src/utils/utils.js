@@ -1,13 +1,40 @@
 (() => {
-    const EDGE_FUNCTION_URL = 'https://hxpqkysrjeofpburzqwu.supabase.co/functions/v1/openrouter-proxy';
+    const EDGE_FUNCTION_URL = 'https://openrouter-proxy.c-viperdevelopment.workers.dev';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cHFreXNyamVvZnBidXJ6cXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyOTg5MzMsImV4cCI6MjA4Njg3NDkzM30.EETUQhkrH-dxs03cKawD1LQ83yTu_kVJCSt5bt-Pgkw';
 
-    const VISION_MODELS = ['openai/gpt-4o', 'google/gemini-2.5-pro-preview'];
+    // Hardcoded fallbacks for vision check (used when cache is empty)
+    const FALLBACK_VISION_MODELS = ['openai/gpt-4o', 'google/gemini-2.5-pro-preview'];
 
-    const isVisionModel = (m) => VISION_MODELS.includes(m);
+    // Cached model config (loaded from chrome.storage.local once)
+    let _cachedModels = null;
+
+    const loadCachedModels = () => {
+        if (_cachedModels) return Promise.resolve(_cachedModels);
+        return new Promise(resolve => {
+            chrome.storage.local.get(['model_config_models'], d => {
+                _cachedModels = d.model_config_models || null;
+                resolve(_cachedModels);
+            });
+        });
+    };
+
+    // Synchronous check using whatever is cached; falls back to hardcoded list
+    const isVisionModel = (m) => {
+        if (_cachedModels) {
+            const found = _cachedModels.find(mod => mod.id === m);
+            return found ? !!found.is_vision : false;
+        }
+        return FALLBACK_VISION_MODELS.includes(m);
+    };
 
     const getDisplayModelName = (id) => {
         if (!id) return 'Model';
+        // Try cached display name first
+        if (_cachedModels) {
+            const found = _cachedModels.find(mod => mod.id === id);
+            if (found) return found.display_name;
+        }
+        // Fallback: derive from model ID
         let n = id.split('/').pop();
         return n
             .replace(/-2024-\d{2}-\d{2}$/, '')
@@ -20,12 +47,19 @@
             .replace('gemini-2.5-pro-preview', 'Gemini 2.5 Pro');
     };
 
-    const getSupabaseToken = () =>
-        new Promise((resolve) =>
-            chrome.storage.local.get(['supabase_session'], (d) =>
-                resolve(d?.supabase_session?.access_token || null)
-            )
-        );
+    const getSupabaseToken = async () => {
+        try {
+            const res = await chrome.runtime.sendMessage({ type: 'getFreshToken' });
+            return res?.success ? res.access_token : null;
+        } catch {
+            // Fallback to stored token if background is unavailable
+            return new Promise((resolve) =>
+                chrome.storage.local.get(['supabase_session'], (d) =>
+                    resolve(d?.supabase_session?.access_token || null)
+                )
+            );
+        }
+    };
 
     const getImageDataUrl = async () => {
         try {
@@ -53,7 +87,6 @@
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,
-                apikey: SUPABASE_ANON_KEY,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
@@ -66,6 +99,7 @@
     window.CanvasToolkitUtils = {
         EDGE_FUNCTION_URL,
         SUPABASE_ANON_KEY,
+        loadCachedModels,
         isVisionModel,
         getDisplayModelName,
         getSupabaseToken,

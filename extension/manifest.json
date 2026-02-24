@@ -14,7 +14,8 @@
         "*://*.instructure.com/*",
         "*://*.canvas-user-content.com/*",
         "https://openrouter.ai/*",
-        "https://hxpqkysrjeofpburzqwu.supabase.co/*"
+        "https://hxpqkysrjeofpburzqwu.supabase.co/*",
+        "https://openrouter-proxy.*.workers.dev/*"
     ],
     "icons": {
         "16": "public/icons/icon16.png",

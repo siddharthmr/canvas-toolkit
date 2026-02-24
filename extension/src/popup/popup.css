@@ -75,6 +75,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 6px;
     padding: 10px 8px;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -83,18 +84,27 @@ body {
 
 .user-bar-left {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
+    flex: 1;
+}
+
+.user-greeting {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
     flex: 1;
 }
 
 .user-bar-right {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
-    margin-left: 8px;
 }
 
 .user-email {
@@ -115,8 +125,6 @@ body {
     border-radius: 4px;
     padding: 3px 8px;
     white-space: nowrap;
-    width: 100%;
-    align-self: stretch;
     text-align: center;
 }
 
@@ -137,37 +145,35 @@ body {
     opacity: 0.7;
 }
 
-/* ── Progress Bar ── */
+/* ── AI Credits Bar (inside AI section, styled like selects) ── */
 
-.progress-container {
-    width: 100%;
-    align-self: stretch;
-    height: 16px;
-    background: var(--bg);
-    border-radius: 8px;
+.credits-bar-wrapper {
+    flex: 1;
+    height: 20px;
+    background: var(--bg-card);
+    border-radius: 10px;
     border: 1px solid var(--border);
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
+    font-size: 10px;
 }
 
-.progress-fill {
+.credits-bar-fill {
     height: 100%;
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--text);
     width: 0%;
     transition: width 0.3s ease;
 }
 
-.progress-label {
-    position: absolute;
-    width: 100%;
-    text-align: center;
-    font-size: 9px;
+.credits-bar-label {
+    font-size: 11px;
     font-weight: 600;
-    color: #0A0A0A;
-    pointer-events: none;
+    color: var(--text);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ── Sections ── */
@@ -191,6 +197,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.section-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .section-title {
@@ -291,7 +303,15 @@ body {
 
 .model-row select:focus {
     outline: none;
-    border-color: var(--text-dim);
+    border-color: var(--border);
+}
+
+/* ── Update Status ── */
+
+.update-status {
+    font-size: 10px;
+    color: var(--text-secondary);
+    transition: opacity 0.3s;
 }
 
 /* ── Lock Overlay ── */

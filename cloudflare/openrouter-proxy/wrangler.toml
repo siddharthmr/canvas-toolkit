@@ -1,0 +1,9 @@
+name = "openrouter-proxy"
+main = "src/worker.js"
+compatibility_date = "2025-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Secrets (already configured via Cloudflare dashboard):
+#   OPENROUTER_KEY
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_KEY

@@ -99,34 +99,69 @@
     const attachIframeListener = () => {
         window.addEventListener('message', (ev) => {
             if (!ev.data?.type?.startsWith('runQuizEnhancer')) return;
-            chrome.storage.sync.get(
-                ['primaryModel', 'secondaryModel'],
-                ({ primaryModel, secondaryModel }) => {
-                    if (ev.data.type === 'runQuizEnhancerPrimary')
-                        runWithModel(primaryModel || 'openai/o4-mini');
-                    else runWithModel(secondaryModel || 'openai/gpt-4o');
-                }
-            );
+            chrome.storage.local.get(['model_config_defaults'], (localData) => {
+                const defaults = localData.model_config_defaults || {};
+                chrome.storage.sync.get(
+                    ['primaryModel', 'secondaryModel'],
+                    ({ primaryModel, secondaryModel }) => {
+                        if (ev.data.type === 'runQuizEnhancerPrimary')
+                            runWithModel(primaryModel || defaults.primary || 'openai/gpt-4o');
+                        else runWithModel(secondaryModel || defaults.secondary || 'deepseek/deepseek-r1');
+                    }
+                );
+            });
         });
     };
 
     const init = () =>
-        chrome.storage.local.get(['plan_tier'], (localData) => {
+        chrome.storage.local.get(['plan_tier', 'model_config_defaults'], (localData) => {
             const planTier = localData.plan_tier;
             const hasAi = planTier === 'ai';
 
             if (!hasAi) return;
 
+            // Warm the cached models for vision check + display names
+            U.loadCachedModels();
+
+            const defaults = localData.model_config_defaults || {};
+
             chrome.storage.sync.get(
                 ['primaryModel', 'secondaryModel', 'stealthModeEnabled'],
                 (d) => {
-                    const p = d.primaryModel || 'openai/o4-mini';
-                    const s = d.secondaryModel || 'openai/gpt-4o';
-                    const op = d.stealthModeEnabled ? '0' : '1';
+                    let p = d.primaryModel || defaults.primary || 'openai/gpt-4o';
+                    let s = d.secondaryModel || defaults.secondary || 'deepseek/deepseek-r1';
+                    let op = d.stealthModeEnabled ? '0' : '1';
 
                     if (window === window.top) {
                         if (document.querySelector('iframe[title="Quizzes 2"]'))
                             addMenuButtons(p, s, op);
+
+                        // Live-update menu buttons when popup settings change
+                        chrome.storage.onChanged.addListener((changes, areaName) => {
+                            if (areaName !== 'sync') return;
+                            let needsUpdate = false;
+
+                            if (changes.primaryModel?.newValue) {
+                                p = changes.primaryModel.newValue;
+                                needsUpdate = true;
+                            }
+                            if (changes.secondaryModel?.newValue) {
+                                s = changes.secondaryModel.newValue;
+                                needsUpdate = true;
+                            }
+                            if ('stealthModeEnabled' in changes) {
+                                op = changes.stealthModeEnabled.newValue ? '0' : '1';
+                                needsUpdate = true;
+                            }
+
+                            if (!needsUpdate) return;
+
+                            // Remove existing buttons and re-add
+                            const existing = document.querySelectorAll('#canvas-toolkit-primary-btn, #canvas-toolkit-secondary-btn');
+                            existing.forEach(el => el.closest('li')?.remove());
+                            if (document.querySelector('iframe[title="Quizzes 2"]'))
+                                addMenuButtons(p, s, op);
+                        });
                     } else {
                         attachIframeListener();
                     }

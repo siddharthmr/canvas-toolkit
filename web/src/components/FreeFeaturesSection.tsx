@@ -181,7 +181,7 @@ const SessionPanel = ({ label, statusText, statusTone, startedAt, events }: Sess
 );
 
 const FreeFeaturesSection = () => (
-    <section className="relative py-24 w-full overflow-hidden">
+    <section className="relative py-14 w-full overflow-hidden">
         <div className="w-full px-4">
             <div className="max-w-6xl mx-auto">
                 <div className="text-center mb-12">

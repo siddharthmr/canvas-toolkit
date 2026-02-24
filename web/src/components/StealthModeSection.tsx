@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ModelData } from '@/lib/getModels';
 
 const options = [
     { label: '0.55 L', value: 'a' },
@@ -54,10 +55,14 @@ const QuestionCard = ({
     selected,
     onSelect,
     showButtons,
+    primaryName,
+    secondaryName,
 }: {
     selected: string | null;
     onSelect: (v: string) => void;
     showButtons: 'visible' | 'hidden';
+    primaryName: string;
+    secondaryName: string;
 }) => {
     const [loadingBtn, setLoadingBtn] = useState<string | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,35 +99,39 @@ const QuestionCard = ({
                     <span className="text-[#E0E0E0] font-bold text-[14px]">Question 2</span>
                     {showButtons === 'visible' ? (
                         <button
-                            onClick={(e) => handleAiClick(e, 'gemini')}
+                            onClick={(e) => handleAiClick(e, 'primary')}
                             disabled={loadingBtn !== null}
-                            className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 min-w-[90px] justify-center"
+                            className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 justify-center"
                         >
-                            {loadingBtn === 'gemini' ? <Spinner /> : 'Gemini 3 Pro'}
+                            {loadingBtn === 'primary' ? <Spinner /> : primaryName}
                         </button>
                     ) : (
                         <button
-                            onClick={(e) => handleAiClick(e, 'gemini')}
+                            onClick={(e) => handleAiClick(e, 'primary')}
                             disabled={loadingBtn !== null}
-                            className="px-2.5 py-1 rounded border-2 border-dashed border-red-500/60 min-w-[72px] h-[26px] cursor-pointer hover:border-red-500/80 transition-colors"
-                        />
+                            className="px-2.5 py-1 text-[11px] font-medium rounded border-2 border-dashed border-red-500/60 cursor-pointer hover:border-red-500/80 transition-colors inline-flex items-center justify-center"
+                        >
+                            <span className="invisible">{primaryName}</span>
+                        </button>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
                     {showButtons === 'visible' ? (
                         <button
-                            onClick={(e) => handleAiClick(e, 'gpt')}
+                            onClick={(e) => handleAiClick(e, 'secondary')}
                             disabled={loadingBtn !== null}
-                            className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 min-w-[62px] justify-center"
+                            className="px-2.5 py-1 text-[11px] font-medium rounded bg-[#333] text-[#ccc] hover:bg-[#444] transition-colors cursor-pointer inline-flex items-center gap-1.5 justify-center"
                         >
-                            {loadingBtn === 'gpt' ? <Spinner /> : 'GPT 5.2'}
+                            {loadingBtn === 'secondary' ? <Spinner /> : secondaryName}
                         </button>
                     ) : (
                         <button
-                            onClick={(e) => handleAiClick(e, 'gpt')}
+                            onClick={(e) => handleAiClick(e, 'secondary')}
                             disabled={loadingBtn !== null}
-                            className="px-2.5 py-1 rounded border-2 border-dashed border-red-500/60 min-w-[52px] h-[26px] cursor-pointer hover:border-red-500/80 transition-colors"
-                        />
+                            className="px-2.5 py-1 text-[11px] font-medium rounded border-2 border-dashed border-red-500/60 cursor-pointer hover:border-red-500/80 transition-colors inline-flex items-center justify-center"
+                        >
+                            <span className="invisible">{secondaryName}</span>
+                        </button>
                     )}
                     <span className="text-[#E0E0E0] text-[13px] font-medium whitespace-nowrap">1 pts</span>
                 </div>
@@ -173,7 +182,7 @@ const ArrowIcon = () => (
     </div>
 );
 
-const StealthModeSection = () => {
+const StealthModeSection = ({ models }: { models: ModelData }) => {
     const [leftSelected, setLeftSelected] = useState<string | null>(null);
     const [rightSelected, setRightSelected] = useState<string | null>(null);
 
@@ -186,7 +195,7 @@ const StealthModeSection = () => {
     }, []);
 
     return (
-        <section className="relative py-24 w-full overflow-hidden">
+        <section className="relative py-14 w-full overflow-hidden">
             <div className="w-full px-4">
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-12">
@@ -210,7 +219,13 @@ const StealthModeSection = () => {
                                     Visible
                                 </span>
                             </div>
-                            <QuestionCard selected={leftSelected} onSelect={handleLeftSelect} showButtons="visible" />
+                            <QuestionCard
+                                selected={leftSelected}
+                                onSelect={handleLeftSelect}
+                                showButtons="visible"
+                                primaryName={models.defaultPrimary}
+                                secondaryName={models.defaultSecondary}
+                            />
                         </div>
 
                         <div className="flex items-center justify-center py-2 lg:py-0">
@@ -227,7 +242,13 @@ const StealthModeSection = () => {
                                     Hidden
                                 </span>
                             </div>
-                            <QuestionCard selected={rightSelected} onSelect={handleRightSelect} showButtons="hidden" />
+                            <QuestionCard
+                                selected={rightSelected}
+                                onSelect={handleRightSelect}
+                                showButtons="hidden"
+                                primaryName={models.defaultPrimary}
+                                secondaryName={models.defaultSecondary}
+                            />
                         </div>
                     </div>
 

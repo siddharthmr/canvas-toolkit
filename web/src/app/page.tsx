@@ -6,26 +6,31 @@ import PricingSection from '../components/PricingSection';
 import FAQSection from '../components/FAQSection';
 import FadeInWhenVisible from '../components/FadeInWhenVisible';
 import FooterSection from '../components/FooterSection';
+import { getModels } from '@/lib/getModels';
 
-export default function Home() {
+export const revalidate = 86400; // revalidate model data once per day (ISR)
+
+export default async function Home() {
+    const models = await getModels();
+
     return (
         <div className="flex flex-col items-center justify-center w-full">
             <div className=" w-full">
                 <FadeInWhenVisible className="w-full">
                     <div id="hero">
-                        <HeroSection />
+                        <HeroSection models={models} />
                     </div>
                 </FadeInWhenVisible>
 
                 <FadeInWhenVisible className="w-full">
                     <div id="trusted-answers">
-                        <TrustedAnswersSection />
+                        <TrustedAnswersSection models={models} />
                     </div>
                 </FadeInWhenVisible>
 
                 <FadeInWhenVisible className="w-full">
                     <div id="stealth-mode">
-                        <StealthModeSection />
+                        <StealthModeSection models={models} />
                     </div>
                 </FadeInWhenVisible>
 
