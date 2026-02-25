@@ -33,7 +33,7 @@ async function syncTabDetection(liveInject = false) {
             await chrome.scripting.registerContentScripts([{
                 id: SHIV_SCRIPT_ID,
                 js: ['src/content/listenerShiv.js'],
-                matches: ['*://*.instructure.com/*'],
+                matches: ['<all_urls>'],
                 world: 'MAIN',
                 allFrames: true,
                 matchOriginAsFallback: true,
@@ -43,9 +43,9 @@ async function syncTabDetection(liveInject = false) {
             await chrome.scripting.unregisterContentScripts({ ids: [SHIV_SCRIPT_ID] });
         }
 
-        // Live-inject into already-open Canvas tabs when toggled on
+        // Live-inject into already-open web tabs when toggled on
         if (shouldInject && liveInject) {
-            const tabs = await chrome.tabs.query({ url: '*://*.instructure.com/*' });
+            const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] });
             for (const tab of tabs) {
                 try {
                     await chrome.scripting.executeScript({

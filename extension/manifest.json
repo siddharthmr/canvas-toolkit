@@ -1,8 +1,8 @@
 {
     "update_url": "https://clients2.google.com/service/update2/crx",
     "manifest_version": 3,
-    "name": "CanvasToolkit",
-    "version": "1.1",
+    "name": "Canvas Toolkit",
+    "version": "1.2",
     "description": "Enhance your Canvas learning experience",
     "action": {
         "default_popup": "src/popup/popup.html",
@@ -11,7 +11,7 @@
         }
     },
     "host_permissions": [
-        "*://*.instructure.com/*",
+        "<all_urls>",
         "*://*.canvas-user-content.com/*",
         "https://openrouter.ai/*",
         "https://hxpqkysrjeofpburzqwu.supabase.co/*",
@@ -36,7 +36,7 @@
     "content_scripts": [
         {
             "matches": [
-                "*://*.instructure.com/*"
+                "<all_urls>"
             ],
             "js": [
                 "src/utils/utils.js",
