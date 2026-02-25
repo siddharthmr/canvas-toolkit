@@ -30,6 +30,7 @@ const universities: University[] = [
     { name: 'UT Austin', logo: '/images/utaustin.png' },
     { name: 'Texas A&M', logo: '/images/tamu.png' },
     { name: 'Rutgers', logo: '/images/rutgers.svg' },
+    { name: 'Harvard', logo: '/images/harvard.svg' },
     { name: 'Arizona State', logo: '/images/asu.svg' },
 ];
 
