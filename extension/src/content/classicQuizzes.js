@@ -41,10 +41,12 @@
             btn.dataset.ctOriginalDisplay = btn.style.display || '';
             btn.dataset.ctOriginalAlignItems = btn.style.alignItems || '';
             btn.dataset.ctOriginalJustifyContent = btn.style.justifyContent || '';
+            btn.dataset.ctOriginalBoxSizing = btn.style.boxSizing || '';
 
             const rect = btn.getBoundingClientRect();
-            btn.style.width = `${Math.ceil(rect.width)}px`;
-            btn.style.height = `${Math.ceil(rect.height)}px`;
+            btn.style.boxSizing = 'border-box';
+            btn.style.width = `${rect.width}px`;
+            btn.style.height = `${rect.height}px`;
             btn.style.padding = '0';
             btn.style.display = 'inline-flex';
             btn.style.alignItems = 'center';
@@ -76,6 +78,8 @@
         else btn.style.removeProperty('align-items');
         if (btn.dataset.ctOriginalJustifyContent) btn.style.justifyContent = btn.dataset.ctOriginalJustifyContent;
         else btn.style.removeProperty('justify-content');
+        if (btn.dataset.ctOriginalBoxSizing) btn.style.boxSizing = btn.dataset.ctOriginalBoxSizing;
+        else btn.style.removeProperty('box-sizing');
 
         return true;
     };
