@@ -1,9 +1,14 @@
 import MacbookMockup from './macbook/MacbookMockup';
 import { ModelData } from '@/lib/getModels';
+import SaleCountdownBanner from './SaleCountdownBanner';
 
 const HeroSection = ({ models }: { models: ModelData }) => (
     <section className="relative w-full overflow-hidden -mt-[4.5rem] sm:-mt-20 pb-20">
         <div className="flex flex-col items-center pt-28 sm:pt-32 gap-3 md:gap-4">
+            <div className="w-full px-6">
+                <SaleCountdownBanner />
+            </div>
+
             {/* Heading */}
             <h1 className="text-center select-none px-6 text-6xl font-extrabold tracking-[-0.03em] leading-[0.98]">
                 <span className="hero-heading-ghost block mb-4">

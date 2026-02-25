@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { User } from '@supabase/supabase-js';
 
 const navLinks = [
     { href: '/#hero', text: 'Home' },
-    { href: '/#trusted-answers', text: 'Answers' },
-    { href: '/#stealth-mode', text: 'Stealth' },
-    { href: '/#free-features', text: 'Features' },
+    { href: '/#trusted-answers', text: 'Models' },
+    { href: '/#stealth-mode', text: 'AI Integration' },
+    { href: '/#free-features', text: 'Stealth' },
+    { href: '/#testimonials', text: 'Reviews' },
     { href: '/#pricing', text: 'Pricing' },
     { href: '/#faq', text: 'FAQ' },
 ];
@@ -49,6 +50,25 @@ const Navbar = () => {
     }, []);
 
     const showBg = scrolled || mobileOpen;
+
+    const handleNavLinkClick = (
+        e: MouseEvent<HTMLAnchorElement>,
+        href: string,
+        closeMobileMenu = false
+    ) => {
+        if (closeMobileMenu) setMobileOpen(false);
+
+        const [targetPath, targetId] = href.split('#');
+        if (!targetId) return;
+        if (targetPath !== '/' || pathname !== '/') return;
+
+        const section = document.getElementById(targetId);
+        if (!section) return;
+
+        e.preventDefault();
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.history.replaceState(null, '', `/#${targetId}`);
+    };
 
     const authButton = user ? (
         <Link
@@ -99,6 +119,7 @@ const Navbar = () => {
                             key={link.href}
                             href={link.href}
                             className="text-[#E5E5E5]/40 text-[11px] font-mono tracking-[0.08em] hover:text-[#E5E5E5] transition-colors duration-200"
+                            onClick={(e) => handleNavLinkClick(e, link.href)}
                         >
                             {link.text}
                         </Link>
@@ -160,7 +181,7 @@ const Navbar = () => {
                                 key={link.href}
                                 href={link.href}
                                 className="text-[#E5E5E5]/50 text-[11px] font-mono tracking-[0.08em] hover:text-[#E5E5E5] transition-colors py-1"
-                                onClick={() => setMobileOpen(false)}
+                                onClick={(e) => handleNavLinkClick(e, link.href, true)}
                             >
                                 {link.text}
                             </Link>

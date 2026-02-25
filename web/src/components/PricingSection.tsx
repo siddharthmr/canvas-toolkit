@@ -1,5 +1,6 @@
 import CheckoutButton from './CheckoutButton';
 import { getProductPriceDetails, type ProductPriceDetails } from '@/lib/stripeUtils';
+import SaleCountdownBanner from './SaleCountdownBanner';
 
 type PlanFeature = {
     text: string;
@@ -11,6 +12,7 @@ type PlanCardProps = {
     description: string;
     tierLabel: string;
     sideLabel: string;
+    originalPrice?: string;
     emphasized?: boolean;
     features: PlanFeature[];
 };
@@ -35,6 +37,7 @@ const PlanCard = ({
     description,
     tierLabel,
     sideLabel,
+    originalPrice,
     emphasized = false,
     features,
 }: PlanCardProps) => {
@@ -45,7 +48,7 @@ const PlanCard = ({
     const dividerClass = emphasized ? 'border-[#344451]/35' : 'border-[#2a2a2a]';
 
     return (
-        <div className={`rounded-xl border ${cardClass} overflow-hidden flex flex-col min-h-[520px]`}>
+        <div className={`rounded-xl border ${cardClass} overflow-hidden flex flex-col`}>
             <div className={`border-b ${dividerClass} px-6 py-5`}>
                 <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -67,14 +70,19 @@ const PlanCard = ({
                         <span className="text-[15px] text-[#ff8e9a]">{plan.error}</span>
                     ) : (
                         <>
-                            <span className="text-[#E5E5E5] text-5xl font-semibold tracking-[-0.03em]">{plan.price}</span>
+                            <div className="flex flex-col gap-1.5">
+                                {originalPrice && (
+                                    <span className="text-[#8b8b8b] text-[18px] leading-none line-through">{originalPrice}</span>
+                                )}
+                                <span className="text-[#E5E5E5] text-5xl font-semibold tracking-[-0.03em]">{plan.price}</span>
+                            </div>
                             <span className="text-[#8b8b8b] text-[28px] leading-none pb-1">/month</span>
                         </>
                     )}
                 </div>
             </div>
 
-            <div className="flex-1 px-6 py-5">
+            <div className="px-6 py-5">
                 <div className="space-y-3.5">
                     {features.map((feature) => (
                         <FeatureRow key={feature.text} text={feature.text} included={feature.included} />
@@ -126,15 +134,19 @@ const PricingSection = async () => {
                         </p>
                     </div>
 
+                    <div className="-mt-4">
+                        <SaleCountdownBanner />
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         <PlanCard
                             plan={stealth}
                             tierLabel="Stealth Tier"
                             sideLabel="Focused"
+                            originalPrice="$14.99"
                             description="Stay undetected in proctored quizzes with stealth-only tools."
                             features={[
                                 { text: 'Disable tab switch detection', included: true },
-                                { text: 'Stealth mode for proctored environments', included: true },
                                 { text: 'AI-powered real-time quiz answering', included: false },
                                 { text: 'Access to all AI models', included: false },
                             ]}
@@ -144,11 +156,11 @@ const PricingSection = async () => {
                             plan={ai}
                             tierLabel="Complete Tier"
                             sideLabel="Recommended"
+                            originalPrice="$29.99"
                             emphasized
                             description="Full toolkit access with stealth + live AI assistance."
                             features={[
                                 { text: 'Disable tab switch detection', included: true },
-                                { text: 'Stealth mode for proctored environments', included: true },
                                 { text: 'AI-powered real-time quiz answering', included: true },
                                 { text: 'Access to all AI models (GPT, Gemini, etc.)', included: true },
                             ]}

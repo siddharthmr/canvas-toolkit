@@ -6,6 +6,7 @@ import PricingSection from '../components/PricingSection';
 import FAQSection from '../components/FAQSection';
 import FadeInWhenVisible from '../components/FadeInWhenVisible';
 import FooterSection from '../components/FooterSection';
+import TestimonialsSection from '../components/TestimonialsSection';
 import { getModels } from '@/lib/getModels';
 
 export const revalidate = 86400; // revalidate model data once per day (ISR)
@@ -37,6 +38,12 @@ export default async function Home() {
                 <FadeInWhenVisible className="w-full">
                     <div id="free-features">
                         <FreeFeaturesSection />
+                    </div>
+                </FadeInWhenVisible>
+
+                <FadeInWhenVisible className="w-full">
+                    <div id="testimonials">
+                        <TestimonialsSection />
                     </div>
                 </FadeInWhenVisible>
 
