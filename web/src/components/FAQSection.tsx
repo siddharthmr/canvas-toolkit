@@ -11,12 +11,12 @@ const faqs: FAQItem[] = [
     {
         question: 'What questions does CanvasToolkit support?',
         answer:
-            'CanvasToolkit currently supports multiple choice questions in Canvas LMS. Support for additional question types is planned.',
+            'CanvasToolkit supports all question types on Classic Quizzes, and we are actively working on support for New Quizzes. We highly recommend testing on a practice quiz/test first before using it in a proctored environment.',
     },
     {
-        question: 'Is CanvasToolkit free to use?',
+        question: 'Is AI usage unlimited?',
         answer:
-            'AI Integration is the only paid feature. Core stealth and utility features are free and active after installation.',
+            'To prevent abuse and overuse, AI usage is provided through monthly credits that we believe are more than enough for most users. If you feel it is not enough, reach out to us on Discord.',
     },
     {
         question: 'Is CanvasToolkit fully undetected?',
@@ -30,12 +30,12 @@ const faqs: FAQItem[] = [
     {
         question: 'Do I need an account to use CanvasToolkit?',
         answer:
-            'An account is required for AI Integration. Non-AI features can be used without creating an account.',
+            'Yes. You need an account to purchase and manage a plan, and an active plan is required to use all CanvasToolkit features.',
     },
 ];
 
 const FAQSection = () => {
-    const [openIndex, setOpenIndex] = useState<number>(0);
+    const [openIndex, setOpenIndex] = useState<number>(-1);
 
     return (
         <section className="relative py-14 w-full overflow-hidden">

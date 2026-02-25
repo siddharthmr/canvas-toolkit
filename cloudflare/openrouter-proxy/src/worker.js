@@ -16,6 +16,7 @@ const NO_CHOICES_TYPES = [
   "numerical_question",
   "fill_in_multiple_blanks_question",
   "multiple_dropdowns_question",
+  "essay_question",
 ];
 
 // ── Model whitelist cache (persists across requests in the same CF isolate) ──
@@ -148,6 +149,31 @@ export default {
       let responseFormat = undefined;
 
       switch (questionType) {
+        case "essay_question": {
+          systemPrompt =
+            "You are a quiz-answering assistant. The user gives you a free-response question. Return the correct answer in the specified JSON format. Be concise and direct.";
+          userContent = `Question: ${questionText}`;
+          responseFormat = {
+            type: "json_schema",
+            json_schema: {
+              name: "free_response_answer",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  answer: {
+                    type: "string",
+                    description: "The concise answer to the question",
+                  },
+                },
+                required: ["answer"],
+                additionalProperties: false,
+              },
+            },
+          };
+          break;
+        }
+
         case "short_answer_question": {
           systemPrompt =
             "You are a quiz-answering assistant. The user gives you a fill-in-the-blank or short answer question. Return the correct answer in the specified JSON format. Be concise \u2014 just the answer, no explanation.";
@@ -478,6 +504,7 @@ export default {
           const parsed = JSON.parse(rawAnswer);
 
           switch (questionType) {
+            case "essay_question":
             case "short_answer_question":
             case "numerical_question":
               result = parsed.answer ?? rawAnswer;
@@ -518,6 +545,7 @@ export default {
           );
 
           switch (questionType) {
+            case "essay_question":
             case "short_answer_question":
             case "numerical_question":
               result = rawAnswer;

@@ -124,13 +124,20 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
 
     const periodEnd = toISOStringOrNull(sub.items.data[0]?.current_period_end);
 
-    await updateProfile(profile.id, {
+    const payload: Record<string, any> = {
         credits,
         subscription_status: 'active',
         current_period_end: periodEnd,
         stripe_subscription_id: subscriptionId,
         plan_tier: tier
-    });
+    };
+
+    await updateProfile(profile.id, payload);
+
+    // Increment billing cycle counter for AI plan users
+    if (tier === 'ai') {
+        await supabaseAdmin.rpc('increment_ai_billing_cycles', { p_user_id: profile.id });
+    }
 
     console.log(`Granted ${credits} credits (tier=${tier}) to user ${profile.id} for invoice ${invoice.id}.`);
 }

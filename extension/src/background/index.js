@@ -199,6 +199,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    if (message.type === 'execMainWorld') {
+        if (sender.tab?.id && message.code) {
+            chrome.scripting.executeScript({
+                target: { tabId: sender.tab.id },
+                world: 'MAIN',
+                func: (code) => { eval(code); },
+                args: [message.code]
+            }).catch(() => {});
+        }
+        return false;
+    }
+
     if (message.type === 'syncTabDetection') {
         syncTabDetection(true);
         return false;

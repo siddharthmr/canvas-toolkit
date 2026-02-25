@@ -3,6 +3,83 @@
 
     const VISIBLE_INPUT = '.answer_input input:not([type="hidden"])';
 
+    const ensureSpinnerStyles = () => {
+        if (document.getElementById('canvas-toolkit-spinner-style')) return;
+        const style = document.createElement('style');
+        style.id = 'canvas-toolkit-spinner-style';
+        style.textContent = `
+            @keyframes canvasToolkitSpin {
+                to { transform: rotate(360deg); }
+            }
+            .canvas-toolkit-btn-spinner {
+                width: 14px;
+                height: 14px;
+                border: 2px solid rgba(255, 255, 255, 0.25);
+                border-top-color: #d4d4d4;
+                border-radius: 50%;
+                display: block;
+                box-sizing: border-box;
+                animation: canvasToolkitSpin 0.75s linear infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const setButtonLoading = (btn, isLoading) => {
+        if (!btn) return false;
+
+        if (isLoading) {
+            if (btn.dataset.ctLoading === '1') return false;
+
+            ensureSpinnerStyles();
+
+            btn.dataset.ctLoading = '1';
+            btn.dataset.ctOriginalText = btn.textContent || '';
+            btn.dataset.ctOriginalWidth = btn.style.width || '';
+            btn.dataset.ctOriginalHeight = btn.style.height || '';
+            btn.dataset.ctOriginalPadding = btn.style.padding || '';
+            btn.dataset.ctOriginalDisplay = btn.style.display || '';
+            btn.dataset.ctOriginalAlignItems = btn.style.alignItems || '';
+            btn.dataset.ctOriginalJustifyContent = btn.style.justifyContent || '';
+
+            const rect = btn.getBoundingClientRect();
+            btn.style.width = `${Math.ceil(rect.width)}px`;
+            btn.style.height = `${Math.ceil(rect.height)}px`;
+            btn.style.padding = '0';
+            btn.style.display = 'inline-flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.textContent = '';
+            btn.disabled = true;
+
+            const spinner = document.createElement('span');
+            spinner.className = 'canvas-toolkit-btn-spinner';
+            spinner.setAttribute('aria-hidden', 'true');
+            btn.appendChild(spinner);
+
+            return true;
+        }
+
+        btn.dataset.ctLoading = '0';
+        btn.disabled = false;
+        btn.textContent = btn.dataset.ctOriginalText || btn.textContent;
+
+        if (btn.dataset.ctOriginalWidth) btn.style.width = btn.dataset.ctOriginalWidth;
+        else btn.style.removeProperty('width');
+        if (btn.dataset.ctOriginalHeight) btn.style.height = btn.dataset.ctOriginalHeight;
+        else btn.style.removeProperty('height');
+        if (btn.dataset.ctOriginalPadding) btn.style.padding = btn.dataset.ctOriginalPadding;
+        else btn.style.removeProperty('padding');
+        if (btn.dataset.ctOriginalDisplay) btn.style.display = btn.dataset.ctOriginalDisplay;
+        else btn.style.removeProperty('display');
+        if (btn.dataset.ctOriginalAlignItems) btn.style.alignItems = btn.dataset.ctOriginalAlignItems;
+        else btn.style.removeProperty('align-items');
+        if (btn.dataset.ctOriginalJustifyContent) btn.style.justifyContent = btn.dataset.ctOriginalJustifyContent;
+        else btn.style.removeProperty('justify-content');
+
+        return true;
+    };
+
     const getQuestionType = (el) =>
         el.classList.contains('multiple_answers_question')
             ? 'multiple_answers_question'
@@ -20,10 +97,18 @@
             ? 'numerical_question'
             : el.classList.contains('matching_question')
             ? 'matching_question'
+            : el.classList.contains('essay_question')
+            ? 'essay_question'
             : 'unknown';
 
     const getQuestionData = (el) => {
         const qType = getQuestionType(el);
+
+        // --- Essay question ---
+        if (qType === 'essay_question') {
+            const text = el.querySelector('.question_text')?.innerText.trim() || '';
+            return { question: text, choices: [], type: qType };
+        }
 
         // --- Fill-in-the-blank (single) / Numerical ---
         if (qType === 'short_answer_question' || qType === 'numerical_question') {
@@ -238,6 +323,33 @@
                 });
                 break;
             }
+            case 'essay_question': {
+                const val = String(answer);
+                const htmlVal = val.replace(/\n/g, '<br>');
+                const tinyId = qEl.querySelector('textarea.question_input')?.id;
+
+                // Write directly into TinyMCE iframe body (same-origin)
+                if (tinyId) {
+                    const iframe = qEl.querySelector(`#${tinyId}_ifr`);
+                    if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+                        iframe.contentDocument.body.innerHTML = htmlVal;
+                    }
+                    // Fire tinymce change via background MAIN world injection
+                    chrome.runtime.sendMessage({
+                        type: 'execMainWorld',
+                        code: `(function(){ try { var ed = typeof tinymce!=='undefined' && tinymce.get('${tinyId}'); if(ed){ed.fire('change');} } catch(e){} })();`
+                    });
+                }
+
+                // Also set textarea value for form submission
+                const textarea = qEl.querySelector('textarea.question_input');
+                if (textarea) {
+                    textarea.value = htmlVal;
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                break;
+            }
             case 'multiple_dropdowns_question':
             case 'matching_question': {
                 // answer is { "selectName1": "optionValue", "selectName2": "optionValue" }
@@ -255,11 +367,16 @@
         }
     };
 
-    const handleClick = (e, qEl, modelId) => {
+    const handleClick = async (e, qEl, modelId) => {
         e.preventDefault();
-        (async () => {
+        const btn = e.currentTarget || e.target;
+        if (!setButtonLoading(btn, true)) return;
+        try {
             const token = await U.getSupabaseToken();
-            if (!token) return alert('Please log in via the popup first.');
+            if (!token) {
+                alert('Please log in via the popup first.');
+                return;
+            }
 
             const img = U.isVisionModel(modelId)
                 ? await U.getImageDataUrl()
@@ -269,7 +386,7 @@
 
             if (!question)
                 return alert('Failed to read question.');
-            if (!['short_answer_question', 'numerical_question', 'fill_in_multiple_blanks_question', 'multiple_dropdowns_question'].includes(type) && !choices.length)
+            if (!['short_answer_question', 'numerical_question', 'fill_in_multiple_blanks_question', 'multiple_dropdowns_question', 'essay_question'].includes(type) && !choices.length)
                 return alert('Failed to read question choices.');
 
             const payload = {
@@ -280,24 +397,16 @@
                 imageDataUrl: img
             };
 
-            const btn = e.currentTarget || e.target;
-            const originalText = btn ? btn.textContent : '';
-            btn.textContent = 'Processing...';
-            btn.disabled = true;
-
             try {
                 const res = await U.callEdgeFunction(token, payload);
                 selectAnswer(qEl, res.result, type);
             } catch (err) {
                 console.error(err);
                 alert(`AI error: ${err.message.slice(0, 100)}`);
-            } finally {
-                if (btn) {
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                }
             }
-        })();
+        } finally {
+            setButtonLoading(btn, false);
+        }
     };
 
     const addButtons = (primary, secondary, opacity) => {
