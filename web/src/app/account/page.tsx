@@ -56,6 +56,8 @@ export default function AccountPage() {
 
     const [stealthPriceId, setStealthPriceId] = useState<string | null>(null);
     const [aiPriceId, setAiPriceId] = useState<string | null>(null);
+    const [stealthPrice, setStealthPrice] = useState<string | null>(null);
+    const [aiPrice, setAiPrice] = useState<string | null>(null);
     const [isPriceLoading, setIsPriceLoading] = useState(false);
     const [priceFetchError, setPriceFetchError] = useState<string | null>(null);
     const priceFetchInitiated = useRef(false);
@@ -107,10 +109,12 @@ export default function AccountPage() {
                     if (stealthRes.ok) {
                         const d = await stealthRes.json();
                         if (d.priceId) setStealthPriceId(d.priceId);
+                        if (d.price) setStealthPrice(d.price);
                     }
                     if (aiRes.ok) {
                         const d = await aiRes.json();
                         if (d.priceId) setAiPriceId(d.priceId);
+                        if (d.price) setAiPrice(d.price);
                     }
                 } catch (err: any) {
                     console.error('Error fetching prices:', err);
@@ -130,6 +134,7 @@ export default function AccountPage() {
                     if (res.ok) {
                         const d = await res.json();
                         if (d.priceId) setAiPriceId(d.priceId);
+                        if (d.price) setAiPrice(d.price);
                     }
                 } catch (err: any) {
                     console.error('Error fetching AI price:', err);
@@ -286,7 +291,7 @@ export default function AccountPage() {
                                             <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                                                 <div>
                                                     <p className="text-foreground text-sm font-medium">Stealth Mode</p>
-                                                    <p className="text-muted-foreground text-xs mt-0.5">$7.99/mo</p>
+                                                    <p className="text-muted-foreground text-xs mt-0.5">{stealthPrice ? `${stealthPrice}/mo` : 'Price unavailable'}</p>
                                                 </div>
                                                 <CheckoutButton priceId={stealthPriceId} />
                                             </div>
@@ -295,7 +300,7 @@ export default function AccountPage() {
                                             <div className="flex items-center justify-between p-4 rounded-lg border border-foreground/10 bg-foreground/[0.03]">
                                                 <div>
                                                     <p className="text-foreground text-sm font-medium">AI Integration</p>
-                                                    <p className="text-muted-foreground text-xs mt-0.5">$10.99/mo</p>
+                                                    <p className="text-muted-foreground text-xs mt-0.5">{aiPrice ? `${aiPrice}/mo` : 'Price unavailable'}</p>
                                                 </div>
                                                 <CheckoutButton priceId={aiPriceId} />
                                             </div>
@@ -313,7 +318,7 @@ export default function AccountPage() {
                             <div className="mt-8 flex items-center justify-between p-4 rounded-lg border border-foreground/10 bg-foreground/[0.03]">
                                 <div>
                                     <p className="text-foreground text-sm font-medium">Upgrade to AI Integration</p>
-                                    <p className="text-muted-foreground text-xs mt-0.5">$10.99/mo</p>
+                                    <p className="text-muted-foreground text-xs mt-0.5">{aiPrice ? `${aiPrice}/mo` : 'Price unavailable'}</p>
                                 </div>
                                 <CheckoutButton priceId={aiPriceId} label="Upgrade" />
                             </div>

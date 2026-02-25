@@ -16,19 +16,22 @@ export async function getProductPriceDetails(productId: string): Promise<Product
         });
 
         let resolvedPrice: Stripe.Price | null = null;
-        const defaultPrice = product.default_price as Stripe.Price | null;
+        const prices = await stripe.prices.list({
+            product: productId,
+            active: true,
+            type: 'recurring',
+            limit: 100
+        });
+        const latestActiveRecurringPrice = [...prices.data]
+            .sort((a, b) => b.created - a.created)
+            .find((price) => typeof price.unit_amount === 'number');
 
-        if (defaultPrice && !defaultPrice.deleted && typeof defaultPrice.unit_amount === 'number') {
-            resolvedPrice = defaultPrice;
+        if (latestActiveRecurringPrice) {
+            resolvedPrice = latestActiveRecurringPrice;
         } else {
-            const prices = await stripe.prices.list({
-                product: productId,
-                active: true,
-                type: 'recurring',
-                limit: 1
-            });
-            if (prices.data.length > 0 && typeof prices.data[0].unit_amount === 'number') {
-                resolvedPrice = prices.data[0];
+            const defaultPrice = product.default_price as Stripe.Price | null;
+            if (defaultPrice && !defaultPrice.deleted && typeof defaultPrice.unit_amount === 'number') {
+                resolvedPrice = defaultPrice;
             }
         }
 

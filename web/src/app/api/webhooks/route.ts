@@ -6,16 +6,20 @@ import { getSupabaseAdminClient } from '../../../lib/supabaseAdmin';
 const stripe = getStripe();
 const supabaseAdmin = getSupabaseAdminClient();
 
-const PRICE_TO_TIER: Record<string, string> = {
-    price_1T1gs9GGuo9uqrPQ5St2K4ih: 'stealth',
-    price_1T1gsFGGuo9uqrPQ5IjrrlD1: 'ai',
-    price_1RPzlNGGuo9uqrPQRPUlTuwh: 'ai' // legacy price
+const STEALTH_PRODUCT_ID = 'prod_TzgEBiCV7UhyXS';
+const AI_PRODUCT_ID = 'prod_TzgEPgGosGk6DQ';
+const LEGACY_AI_PRODUCT_ID = 'prod_SKf5FosciyojiY';
+
+const PRODUCT_TO_PLAN: Record<string, { tier: string; credits: number }> = {
+    [STEALTH_PRODUCT_ID]: { tier: 'stealth', credits: 0 },
+    [AI_PRODUCT_ID]: { tier: 'ai', credits: 2.5 },
+    [LEGACY_AI_PRODUCT_ID]: { tier: 'ai', credits: 2.5 }
 };
 
-const PRICE_TO_CREDITS: Record<string, number> = {
-    price_1T1gs9GGuo9uqrPQ5St2K4ih: 0,
-    price_1T1gsFGGuo9uqrPQ5IjrrlD1: 2.5,
-    price_1RPzlNGGuo9uqrPQRPUlTuwh: 2.5 // legacy price
+const LEGACY_PRICE_TO_PLAN: Record<string, { tier: string; credits: number }> = {
+    price_1T1gs9GGuo9uqrPQ5St2K4ih: { tier: 'stealth', credits: 0 },
+    price_1T1gsFGGuo9uqrPQ5IjrrlD1: { tier: 'ai', credits: 2.5 },
+    price_1RPzlNGGuo9uqrPQRPUlTuwh: { tier: 'ai', credits: 2.5 }
 };
 
 function extractSubAndCust(obj: any): { subscriptionId?: string; customerId?: string } {
@@ -43,6 +47,46 @@ function toISOStringOrNull(ts?: number): string | null {
     return ts ? new Date(ts * 1000).toISOString() : null;
 }
 
+function getPlanFromProductId(productId?: string | null): { tier: string | null; credits: number } {
+    if (!productId) return { tier: null, credits: 0 };
+    const plan = PRODUCT_TO_PLAN[productId];
+    if (!plan) return { tier: null, credits: 0 };
+    return { tier: plan.tier, credits: plan.credits };
+}
+
+async function resolvePlanFromPrice(
+    price?: Stripe.Price | string | null
+): Promise<{ tier: string | null; credits: number; priceId: string | null }> {
+    if (!price) return { tier: null, credits: 0, priceId: null };
+
+    if (typeof price !== 'string') {
+        const productId =
+            typeof price.product === 'string'
+                ? price.product
+                : price.product?.id;
+        const plan = getPlanFromProductId(productId);
+        return { ...plan, priceId: price.id };
+    }
+
+    const legacyPlan = LEGACY_PRICE_TO_PLAN[price];
+    if (legacyPlan) {
+        return { tier: legacyPlan.tier, credits: legacyPlan.credits, priceId: price };
+    }
+
+    try {
+        const resolvedPrice = await stripe.prices.retrieve(price, { expand: ['product'] });
+        const productId =
+            typeof resolvedPrice.product === 'string'
+                ? resolvedPrice.product
+                : resolvedPrice.product?.id;
+        const plan = getPlanFromProductId(productId);
+        return { ...plan, priceId: resolvedPrice.id };
+    } catch (err: any) {
+        console.warn(`Failed to resolve plan for price ${price}: ${err.message}`);
+        return { tier: null, credits: 0, priceId: price };
+    }
+}
+
 async function updateProfile(userId: string, payload: Record<string, any>) {
     const { error } = await supabaseAdmin.from('profiles').update(payload).eq('id', userId);
 
@@ -62,7 +106,7 @@ async function findProfileByCustomer(customerId: string) {
 async function syncSubscription(sub: Stripe.Subscription) {
     const { id: subscriptionId, status } = sub;
     const current_period_end = sub.items.data[0]?.current_period_end;
-    const priceId = sub.items.data[0]?.price?.id ?? sub.items.data[0]?.price;
+    const itemPrice = sub.items.data[0]?.price;
     const { customerId } = extractSubAndCust(sub);
 
     if (!customerId) {
@@ -76,7 +120,7 @@ async function syncSubscription(sub: Stripe.Subscription) {
         return;
     }
 
-    const tier = typeof priceId === 'string' ? (PRICE_TO_TIER[priceId] ?? null) : null;
+    const { tier } = await resolvePlanFromPrice(itemPrice);
 
     const payload: Record<string, any> = {
         stripe_subscription_id: subscriptionId,
@@ -117,9 +161,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
         return;
     }
 
-    const priceId = sub.items.data[0]?.price.id;
-    const tier = PRICE_TO_TIER[priceId] ?? null;
-    const credits = PRICE_TO_CREDITS[priceId] ?? 0;
+    const { tier, credits, priceId } = await resolvePlanFromPrice(sub.items.data[0]?.price);
     if (!tier) console.warn(`Unknown priceId ${priceId}, no tier or credits assigned.`);
 
     const periodEnd = toISOStringOrNull(sub.items.data[0]?.current_period_end);

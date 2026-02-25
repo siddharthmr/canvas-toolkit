@@ -72,7 +72,7 @@ const HeroSection = ({ models }: { models: ModelData }) => (
             </div>
 
             {/* MacBook mockup */}
-            <div className="w-full mt-8 md:mt-10 px-6 md:px-12 lg:px-20">
+            <div className="hidden sm:block w-full mt-8 md:mt-10 px-6 md:px-12 lg:px-20">
                 <MacbookMockup models={models} />
             </div>
         </div>
