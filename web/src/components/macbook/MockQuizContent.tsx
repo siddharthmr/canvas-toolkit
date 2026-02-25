@@ -292,6 +292,9 @@ const MockQuizContent = ({ models }: { models: ModelData }) => {
                 onlyHandleDraggable
                 handle={
                     <ReactCompareSliderHandle
+                        style={{
+                            color: '#000000',
+                        }}
                         buttonStyle={{
                             width: 28,
                             height: 28,
