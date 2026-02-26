@@ -7,16 +7,15 @@ const TrustedAnswersSection = ({ models }: { models: ModelData }) => {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-10">
                         <h2 className="text-[#E5E5E5] text-4xl md:text-5xl font-extrabold tracking-[-0.03em] leading-tight">
-                            Every Leading Model. One Click.
+                            Unmatched Accuracy
                         </h2>
 
-                        <div className="mt-6 inline-flex items-center rounded-full border border-[#E5E5E5]/[0.06] px-4 py-2 text-xs">
-                            <span className="text-[#E5E5E5]/40">While competitors rely on just GPT-5</span>
-                            <span className="mx-2.5 w-px h-3 bg-[#E5E5E5]/10" />
-                            <span className="text-[#E5E5E5]/70 font-medium">We leverage the very best models</span>
+                        <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#344451]/70 bg-[#101419] px-3 py-2 text-[12px] md:text-[13px] text-[#c5d0d8]">
+                            <span className="text-[#d5dde3]">While competitors rely on outdated models</span>
+                            <span className="font-semibold text-[#8fa2b0]">We leverage the very best models</span>
                         </div>
                         <p className="text-[#E5E5E5]/30 text-[11px] md:text-xs leading-relaxed mt-3 max-w-2xl mx-auto">
-                            Don't see your preferred model? Reach out to us on Discord.
+                            Don't see your preferred model? Reach out to us on Discord. <br></br> We are always updating our models to the latest and greatest.
                         </p>
                     </div>
 

@@ -189,7 +189,6 @@ const FreeFeaturesSection = () => (
                         Seamless Tab Tracking Bypass
                     </h2>
                     <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#344451]/70 bg-[#101419] px-3 py-2 text-[12px] md:text-[13px] text-[#c5d0d8]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#344451]" />
                         <span className="text-[#d5dde3]">Canvas tab switch detection is real:</span>
                         <a
                             href="https://community.instructure.com/en/kb/articles/661037-how-do-i-view-a-quiz-log-for-a-student"
