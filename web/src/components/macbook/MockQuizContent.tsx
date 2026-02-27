@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import {
-    ReactCompareSlider,
-    ReactCompareSliderHandle,
-} from 'react-compare-slider';
+import { ReactCompareSlider } from 'react-compare-slider';
 import { ModelData } from '@/lib/getModels';
 
 const options = [
@@ -291,23 +288,26 @@ const MockQuizContent = ({ models }: { models: ModelData }) => {
             <ReactCompareSlider
                 onlyHandleDraggable
                 handle={
-                    <ReactCompareSliderHandle
-                        style={{
-                            color: '#000000',
-                        }}
-                        buttonStyle={{
-                            width: 28,
-                            height: 28,
-                            background: '#E5E5E5',
-                            border: 'none',
-                            boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-                        }}
-                        linesStyle={{
-                            width: 2,
-                            background: '#E5E5E5',
-                            opacity: 0.4,
-                        }}
-                    />
+                    <div className="group flex flex-col items-center h-full cursor-ew-resize">
+                        {/* Top line */}
+                        <div className="w-px flex-1 bg-gradient-to-b from-transparent via-white/25 to-white/40" />
+                        {/* Handle pill */}
+                        <div className="relative flex items-center justify-center">
+                            <div className="absolute inset-0 rounded-full bg-white/20 blur-md scale-150" />
+                            <div className="relative flex items-center gap-1 px-2 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_4px_24px_rgba(0,0,0,0.5)]
+                                group-hover:bg-white/15 group-hover:border-white/30 group-hover:shadow-[0_4px_32px_rgba(255,255,255,0.08)] transition-all duration-300">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-90 transition-opacity">
+                                    <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                                <div className="w-px h-4 bg-white/20" />
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-90 transition-opacity">
+                                    <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                            </div>
+                        </div>
+                        {/* Bottom line */}
+                        <div className="w-px flex-1 bg-gradient-to-b from-white/40 via-white/25 to-transparent" />
+                    </div>
                 }
                 itemOne={
                     <QuestionCard
