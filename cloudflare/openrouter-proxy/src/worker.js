@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_TOKENS = 10000;
-const MAX_INPUT_CHARS = 1000; // max combined text input (questionText + choices) before sending to OpenRouter
+const MAX_INPUT_CHARS = 5000; // max combined text input (questionText + choices) before sending to OpenRouter
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB max for base64-encoded images
 const CORS = { "Access-Control-Allow-Origin": "*" };
 const JSON_HEADERS = { "Content-Type": "application/json", ...CORS };
